@@ -1,63 +1,78 @@
-import pandas as pd
+import os
+import shutil
+
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression, RidgeClassifier
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.metrics import accuracy_score  # Accuracy metrics
-import pickle
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.callbacks import TensorBoard
 
 import config
+from BPExtractor import BPExtractor
 
 
 class Trainer:
 
     def __init__(self):
-        data = pd.read_csv(config.BODY_POINTS_FILENAME, header=None)
-        data.fillna(0, inplace=True)
-        gestures = data.iloc[:, 0]
-        points = data.drop(columns=[0])
-        self.points_train, self.points_test, self.gestures_train, self.gestures_test = train_test_split(
-            points, gestures, test_size=0.3, random_state=1234)
-        self.pipelines = {
-            'lr': make_pipeline(StandardScaler(), LogisticRegression()),
-            'rc': make_pipeline(StandardScaler(), RidgeClassifier()),
-            'rf': make_pipeline(StandardScaler(), RandomForestClassifier()),
-            'gb': make_pipeline(StandardScaler(), GradientBoostingClassifier()),
-        }
+        self.label_map = {label: num for num, label in enumerate(config.ACTIONS)}
 
     def fit_models(self):
-        fit_models = {}
-        for algo, pipeline in self.pipelines.items():
-            model = pipeline.fit(self.points_train, self.gestures_train)
-            fit_models[algo] = model
-        return fit_models
+        pass
 
     def save_models(self, models):
-        for algo, model in models.items():
-            yhat = model.predict(self.points_test)
-            print(algo, accuracy_score(self.gestures_test, yhat))
-            with open(f'{config.FITED_MODELS_DIR}\\{algo}.pkl', 'wb') as f:
-                pickle.dump(model, f)
+        pass
 
-    def train_and_save_model(self):
-        models = self.fit_models()
-        self.save_models(models)
+    def _prepare_dir_for_logs(self):
+        shutil.rmtree(config.LOG_DIR, ignore_errors=True)
+        os.makedirs(config.LOG_DIR)
+
+    def _get_train_and_test_data(self):
+        features, train = [], []
+        for action in config.ACTIONS:
+            for sequence in np.array(os.listdir(os.path.join(config.BODY_POINTS_DIR, action))).astype(int):
+                all_frames = []
+                for frame_nbr in range(config.NUM_OF_FRAMES):
+                    all_frames.append(
+                        np.load(os.path.join(config.BODY_POINTS_DIR, action, str(sequence), f"{frame_nbr}.npy"),
+                                fix_imports=True))
+                features.append(all_frames)
+                train.append(self.label_map[action])
+        return train_test_split(np.array(features), to_categorical(train).astype(int), test_size=config.TEST_SIZE)
 
     @staticmethod
-    def load_model(model_name=""):
-        if model_name == "":
-            model_name = config.SELECTED_MODEL
-        with open(f'{config.FITED_MODELS_DIR}\\{model_name}.pkl', 'rb') as f:
-            model = pickle.load(f)
+    def _prepare_model():
+        model = Sequential()
+        shape = (config.NUM_OF_FRAMES, sum([i for i in BPExtractor.POINTS_NUM.values()]))
+        model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=shape))
+        model.add(LSTM(128, return_sequences=True, activation='relu'))
+        model.add(LSTM(64, return_sequences=False, activation='relu'))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dense(32, activation='relu'))
+        model.add(Dense(config.ACTIONS.shape[0], activation='softmax'))
+        model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+        return model
+
+    def train_and_save_model(self):
+        X_train, X_test, Y_train, Y_test = self._get_train_and_test_data()
+        self._prepare_dir_for_logs()
+        tensor_board = TensorBoard(log_dir=config.LOG_DIR)
+        model = Trainer._prepare_model()
+        model.fit(X_train, Y_train, epochs=config.EPOCHS, callbacks=[tensor_board])
+        model.summary()
+        ##TODO: h5 or pickle?
+        model.save(config.MODEL_FILENAME)
         return model
 
     @staticmethod
+    def load_model():
+        model = Trainer._prepare_model()
+        model.load_weights(config.MODEL_FILENAME)
+        return model
+
+
+    @staticmethod
     def predict(all_body_points, model):
-        bd_points_pd = pd.DataFrame([all_body_points])
-        body_language_class = model.predict(bd_points_pd)[0]
-        body_language_prob = model.predict_proba(bd_points_pd)[0]
-        return body_language_class, body_language_prob
+        pass
 
-
-#Trainer().train_and_save_model()
+# Trainer().train_and_save_model()
