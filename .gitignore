@@ -133,3 +133,9 @@ dmypy.json
 
 # Private
 ForMyself/
+
+# Model
+*.h5
+
+# Test data
+BDDir/

@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 
 import config
+from Actions import Actions
 from BPExtractor import BPExtractor
 from Trainer import Trainer
 
@@ -38,7 +39,8 @@ class Tracer:
         with self._holistic_model.Holistic(min_detection_confidence=config.MIN_DETECTION_CONFIDENCE,
                                            min_tracking_confidence=config.MIN_TRACKING_CONFIDENCE) as holistic:
             ##TODO: DOBRZE BY BYLO ABY TO ACTION SIEDZIALOW PANDASIE
-            for action in config.ACTIONS:
+            for idx, action in enumerate(Actions.available_actions):
+                all_boyd_points = []
                 for repeat_nbr in range(config.NUM_OF_CAPT_REPEATS):
                     for frame_nbr in range(config.NUM_OF_FRAMES):
                         detection_results = self._prepare_image_and_detection(holistic)
@@ -50,13 +52,12 @@ class Tracer:
                         else:
                             print(f"Action: {action}\tRepeat {repeat_nbr} of {config.NUM_OF_CAPT_REPEATS}")
 
-                        all_boyd_points = BPExtractor.get_body_points(detection_results)
-                        ##TODO: TUTAJ ZAPPISUJE KAŻDĄ KLATKĘ OSOBNO, ALE MOŻE MOŻNA BY BYLo ZAPISYWAC W JEDNYM FOLDERZE WIELE KLATEK?
-                        BPExtractor.save(all_boyd_points, action, repeat_nbr, frame_nbr)
+                        all_boyd_points.append(BPExtractor.get_body_points(detection_results))
 
                         cv2.imshow('Raw Webcam Feed', self._current_image)
                         if cv2.waitKey(10) & 0xFF == ord('q'):
                             break
+                BPExtractor.save(all_boyd_points, action, repeat_nbr, frame_nbr)
 
     def start_recognizing(self):
         sequence, sentence, predictions = [], [], []
@@ -67,20 +68,22 @@ class Tracer:
                 detection_results = self._prepare_image_and_detection(holistic)
                 self._detect_all_body_points(detection_results)
                 sequence.append(BPExtractor.get_body_points(detection_results))
-                sequence = sequence[-30:]
-                if len(sequence) == 30:
+                sequence = sequence[-config.NUM_OF_FRAMES:]
+                if len(sequence) == config.NUM_OF_FRAMES:
                     res = model.predict(np.expand_dims(sequence, axis=0))[0]
-                    print(config.ACTIONS[np.argmax(res)])
+                    print(Actions.available_actions[np.argmax(res)], res[np.argmax(res)])
                     predictions.append(np.argmax(res))
 
+                    ##TODO: Może dodać cos takiego że sekwencja będzie dłuższa niż 30 framów, potem przeszuka się to całe w poszukiwaniu różnych
+                    ## znaków i zwórci ten z największym prawdopodobieństwem?
                     if np.unique(predictions[-10:])[0] == np.argmax(res):
-                        if res[np.argmax(res)] > config.THRESHOLD:
+                        if res[np.argmax(res)] >= config.THRESHOLD:
 
                             if len(sentence) > 0:
-                                if config.ACTIONS[np.argmax(res)] != sentence[-1]:
-                                    sentence.append(config.ACTIONS[np.argmax(res)])
+                                if Actions.available_actions[np.argmax(res)] != sentence[-1]:
+                                    sentence.append(Actions.available_actions[np.argmax(res)])
                             else:
-                                sentence.append(config.ACTIONS[np.argmax(res)])
+                                sentence.append(Actions.available_actions[np.argmax(res)])
 
                     if len(sentence) > 5:
                         sentence = sentence[-5:]
@@ -102,6 +105,12 @@ class Tracer:
         self._video_capture.release()
         cv2.destroyAllWindows()
 
-#Trainer().train_and_save_model()
+## TODO: Usprawnić proces
+## TODO: Ogarnąć zamiane np na pd (łącznie z nazwami aktywności)
+## TODO: Pomyślec czy może być niestandardowa liczba framów?
+## TODO: Dodać GUI z możlwością zapisu nagrania z którego będzie się potem mogło uczyć
+## TODO: Dodać możlwiosć uczenia nie z kamerki a z filmików
+
 #Tracer().start_recording()
+#Trainer().train_and_save_model()
 Tracer().start_recognizing()

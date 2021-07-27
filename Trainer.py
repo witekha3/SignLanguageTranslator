@@ -9,13 +9,14 @@ from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.callbacks import TensorBoard
 
 import config
+from Actions import Actions
 from BPExtractor import BPExtractor
 
 
 class Trainer:
 
     def __init__(self):
-        self.label_map = {label: num for num, label in enumerate(config.ACTIONS)}
+        self.label_map = {label: num for num, label in enumerate(Actions.available_actions)}
 
     def fit_models(self):
         pass
@@ -29,14 +30,10 @@ class Trainer:
 
     def _get_train_and_test_data(self):
         features, train = [], []
-        for action in config.ACTIONS:
-            for sequence in np.array(os.listdir(os.path.join(config.BODY_POINTS_DIR, action))).astype(int):
-                all_frames = []
-                for frame_nbr in range(config.NUM_OF_FRAMES):
-                    all_frames.append(
-                        np.load(os.path.join(config.BODY_POINTS_DIR, action, str(sequence), f"{frame_nbr}.npy"),
-                                fix_imports=True))
-                features.append(all_frames)
+        for action in Actions.available_actions:
+            all_action_repeats = np.split(BPExtractor.load(action), config.NUM_OF_CAPT_REPEATS)
+            for repeat in all_action_repeats:
+                features.append(repeat)
                 train.append(self.label_map[action])
         return train_test_split(np.array(features), to_categorical(train).astype(int), test_size=config.TEST_SIZE)
 
@@ -49,7 +46,7 @@ class Trainer:
         model.add(LSTM(64, return_sequences=False, activation='relu'))
         model.add(Dense(64, activation='relu'))
         model.add(Dense(32, activation='relu'))
-        model.add(Dense(config.ACTIONS.shape[0], activation='softmax'))
+        model.add(Dense(Actions.available_actions.shape[0], activation='softmax'))
         model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
         return model
 
@@ -60,7 +57,6 @@ class Trainer:
         model = Trainer._prepare_model()
         model.fit(X_train, Y_train, epochs=config.EPOCHS, callbacks=[tensor_board])
         model.summary()
-        ##TODO: h5 or pickle?
         model.save(config.MODEL_FILENAME)
         return model
 
@@ -75,4 +71,4 @@ class Trainer:
     def predict(all_body_points, model):
         pass
 
-# Trainer().train_and_save_model()
+

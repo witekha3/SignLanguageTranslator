@@ -1,5 +1,6 @@
 import csv
 import os
+import pickle
 import shutil
 
 import numpy as np
@@ -18,15 +19,18 @@ class BPExtractor:
 
 
     @staticmethod
-    def load():
-        pass
+    def load(action):
+        return np.load(os.path.join(config.BODY_POINTS_DIR, f"{action}.npy"))
 
     @staticmethod
     def save(data, action, repeat_nbr, frame_nbr):
         if data is not None:
-            path = os.path.join(config.BODY_POINTS_DIR, action, str(repeat_nbr))
-            os.makedirs(path, exist_ok=True)
-            np.save(os.path.join(path, str(frame_nbr)), data)
+            file = os.path.join(config.BODY_POINTS_DIR, f"{action}.npy")
+            if os.path.isfile(file):
+                os.remove(file)
+            np.save(file, data)
+            #os.makedirs(path, exist_ok=True)
+            #np.save(os.path.join(path, str(frame_nbr)), data)
 
     @staticmethod
     def get_body_points(results):
