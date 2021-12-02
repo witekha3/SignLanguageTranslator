@@ -21,6 +21,13 @@ class _Actions(metaclass=Singleton):
 
     @property
     def available_actions(self):
+        if len(self._actions) == 0:
+            actions = input("No actions provided. Type the name of the new actions splitted by semicolon or exist: ")
+            if ";" not in actions:
+                return [actions]
+            actions = [action.strip() for action in actions.split(";")]
+            return actions
+        input("New data will be append. Press any key to continue...")
         return self._actions
 
 

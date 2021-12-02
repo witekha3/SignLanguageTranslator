@@ -1,3 +1,7 @@
+import glob
+import os
+from pathlib import Path
+
 import mediapipe as mp
 import cv2
 import numpy as np
@@ -15,6 +19,7 @@ class Tracer:
         self._video_capture = cv2.VideoCapture(0)
         self._holistic_model = mp.solutions.holistic
         self._current_image = None
+        self._black_image = None
 
     def _trace_landmark(self, landmark, connections, color=(80, 110, 10), thickness=1, circle_radius=1):
         self._drawing.draw_landmarks(self._current_image, landmark, connections,
@@ -22,11 +27,13 @@ class Tracer:
 
     def _prepare_image_and_detection(self, model):
         _, frame = self._video_capture.read()
+        if self._black_image is None:
+            self._black_image = np.zeros(frame.shape, dtype=np.uint8)
         self._current_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         self._current_image.flags.writeable = False
         detection_results = model.process(self._current_image)
         self._current_image.flags.writeable = True
-        self._current_image = cv2.cvtColor(self._current_image, cv2.COLOR_RGB2BGR)
+        self._current_image = cv2.cvtColor(self._black_image, cv2.COLOR_RGB2BGR)
         return detection_results
 
     def _detect_all_body_points(self, detection_results):
@@ -38,7 +45,6 @@ class Tracer:
     def start_recording(self):
         with self._holistic_model.Holistic(min_detection_confidence=config.MIN_DETECTION_CONFIDENCE,
                                            min_tracking_confidence=config.MIN_TRACKING_CONFIDENCE) as holistic:
-            ##TODO: DOBRZE BY BYLO ABY TO ACTION SIEDZIALOW PANDASIE
             for idx, action in enumerate(Actions.available_actions):
                 all_boyd_points = []
                 for repeat_nbr in range(config.NUM_OF_CAPT_REPEATS):
@@ -54,10 +60,10 @@ class Tracer:
 
                         all_boyd_points.append(BPExtractor.get_body_points(detection_results))
 
-                        cv2.imshow('Raw Webcam Feed', self._current_image)
+                        cv2.imshow('Webcam', self._current_image)
                         if cv2.waitKey(10) & 0xFF == ord('q'):
                             break
-                BPExtractor.save(all_boyd_points, action, repeat_nbr, frame_nbr)
+                BPExtractor.save(all_boyd_points, action)
 
     def start_recognizing(self):
         sequence, sentence, predictions = [], [], []
@@ -70,20 +76,25 @@ class Tracer:
                 sequence.append(BPExtractor.get_body_points(detection_results))
                 sequence = sequence[-config.NUM_OF_FRAMES:]
                 if len(sequence) == config.NUM_OF_FRAMES:
-                    res = model.predict(np.expand_dims(sequence, axis=0))[0]
-                    print(Actions.available_actions[np.argmax(res)], res[np.argmax(res)])
-                    predictions.append(np.argmax(res))
+                    results = model.predict(np.expand_dims(sequence, axis=0))[0]
+                    # if results[np.argmax(results)] > config.THRESHOLD:
+                    #     print(Actions.available_actions[np.argmax(results)], results[np.argmax(results)])
+                    predictions.append(np.argmax(results))
 
                     ##TODO: Może dodać cos takiego że sekwencja będzie dłuższa niż 30 framów, potem przeszuka się to całe w poszukiwaniu różnych
                     ## znaków i zwórci ten z największym prawdopodobieństwem?
-                    if np.unique(predictions[-10:])[0] == np.argmax(res):
-                        if res[np.argmax(res)] >= config.THRESHOLD:
-
+                    if np.unique(predictions[-10:])[0] == np.argmax(results):
+                        if results[np.argmax(results)] >= config.THRESHOLD:
+                            current_sentence = Actions.available_actions[np.argmax(results)]
+                            if current_sentence == "_":
+                                continue
                             if len(sentence) > 0:
-                                if Actions.available_actions[np.argmax(res)] != sentence[-1]:
-                                    sentence.append(Actions.available_actions[np.argmax(res)])
+                                if current_sentence != sentence[-1]:
+                                    sentence.append(current_sentence)
+                                    print(Actions.available_actions[np.argmax(results)], results[np.argmax(results)])
                             else:
-                                sentence.append(Actions.available_actions[np.argmax(res)])
+                                sentence.append(current_sentence)
+                                print(Actions.available_actions[np.argmax(results)], results[np.argmax(results)])
 
                     if len(sentence) > 5:
                         sentence = sentence[-5:]
@@ -100,17 +111,18 @@ class Tracer:
     def tmp_display_prediction(self, body_language_class, body_language_prob):
         pass
 
-
     def __del__(self):
         self._video_capture.release()
         cv2.destroyAllWindows()
 
 ## TODO: Usprawnić proces
-## TODO: Ogarnąć zamiane np na pd (łącznie z nazwami aktywności)
 ## TODO: Pomyślec czy może być niestandardowa liczba framów?
 ## TODO: Dodać GUI z możlwością zapisu nagrania z którego będzie się potem mogło uczyć
 ## TODO: Dodać możlwiosć uczenia nie z kamerki a z filmików
 
-#Tracer().start_recording()
+
+## TODO: !!!!!! NIE ROBI TEGO GRAFICZNIE!!!! DODAC MENU W TERMINALU GDZIE MOZNA WYBIERAC CZY CHCESZ DODAC NOWE ZNAKI CZY MOZE APPENDOWAC CZY NADPISAC
+
+Tracer().start_recording()
 #Trainer().train_and_save_model()
-Tracer().start_recognizing()
+#Tracer().start_recognizing()

@@ -67,8 +67,4 @@ class Trainer:
         return model
 
 
-    @staticmethod
-    def predict(all_body_points, model):
-        pass
-
 

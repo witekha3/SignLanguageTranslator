@@ -23,10 +23,12 @@ class BPExtractor:
         return np.load(os.path.join(config.BODY_POINTS_DIR, f"{action}.npy"))
 
     @staticmethod
-    def save(data, action, repeat_nbr, frame_nbr):
+    def save(data, action, append=True):
         if data is not None:
             file = os.path.join(config.BODY_POINTS_DIR, f"{action}.npy")
             if os.path.isfile(file):
+                if append:
+                    data = np.concatenate((BPExtractor.load(action), data))
                 os.remove(file)
             np.save(file, data)
             #os.makedirs(path, exist_ok=True)
