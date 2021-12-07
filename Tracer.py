@@ -53,10 +53,12 @@ class Tracer:
                         self._detect_all_body_points(detection_results)
 
                         if frame_nbr == 0:
-                            print("Starting in 2s...")
-                            cv2.waitKey(2000)
+                            print(f"Action: {action}\nStarting in 4s...")
+                            for i in range(4, 0, -1):
+                                print(i)
+                                cv2.waitKey(1000)
                         else:
-                            print(f"Action: {action}\tRepeat {repeat_nbr} of {config.NUM_OF_CAPT_REPEATS}")
+                            print(f"Action: {action}\tRepeat {repeat_nbr+1}/{config.NUM_OF_CAPT_REPEATS}")
 
                         all_boyd_points.append(BPExtractor.get_body_points(detection_results))
 
@@ -123,6 +125,6 @@ class Tracer:
 
 ## TODO: !!!!!! NIE ROBI TEGO GRAFICZNIE!!!! DODAC MENU W TERMINALU GDZIE MOZNA WYBIERAC CZY CHCESZ DODAC NOWE ZNAKI CZY MOZE APPENDOWAC CZY NADPISAC
 
-Tracer().start_recording()
-#Trainer().train_and_save_model()
-#Tracer().start_recognizing()
+# Tracer().start_recording()
+# Trainer().train_and_save_model()
+Tracer().start_recognizing()

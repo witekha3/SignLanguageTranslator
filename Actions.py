@@ -27,7 +27,6 @@ class _Actions(metaclass=Singleton):
                 return [actions]
             actions = [action.strip() for action in actions.split(";")]
             return actions
-        input("New data will be append. Press any key to continue...")
         return self._actions
 
 

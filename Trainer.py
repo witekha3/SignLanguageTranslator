@@ -30,11 +30,20 @@ class Trainer:
 
     def _get_train_and_test_data(self):
         features, train = [], []
+        data = {}
         for action in Actions.available_actions:
-            all_action_repeats = np.split(BPExtractor.load(action), config.NUM_OF_CAPT_REPEATS)
-            for repeat in all_action_repeats:
-                features.append(repeat)
-                train.append(self.label_map[action])
+            try:
+                data[action] = np.split(BPExtractor.load(action), config.NUM_OF_CAPT_REPEATS)
+            except ValueError:
+                print(f"Error in action {action}! Skipping...")
+                Actions.available_actions.remove(action)
+
+        for key, value in data.items():
+            repeats_num = min([len(value) for value in data.values()])
+            print(f"Repeats found: {repeats_num}")
+            for body_points in value[:repeats_num]:
+                features.append(body_points)
+                train.append(self.label_map[key])
         return train_test_split(np.array(features), to_categorical(train).astype(int), test_size=config.TEST_SIZE)
 
     @staticmethod
