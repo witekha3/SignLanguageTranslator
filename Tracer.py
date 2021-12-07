@@ -1,5 +1,6 @@
 import glob
 import os
+import time
 from pathlib import Path
 
 import mediapipe as mp
@@ -77,26 +78,31 @@ class Tracer:
                 self._detect_all_body_points(detection_results)
                 sequence.append(BPExtractor.get_body_points(detection_results))
                 sequence = sequence[-config.NUM_OF_FRAMES:]
+
                 if len(sequence) == config.NUM_OF_FRAMES:
+                    # sequence = np.resize(np.asarray(sequence), (30, 1662))
+
                     results = model.predict(np.expand_dims(sequence, axis=0))[0]
+
                     # if results[np.argmax(results)] > config.THRESHOLD:
                     #     print(Actions.available_actions[np.argmax(results)], results[np.argmax(results)])
-                    predictions.append(np.argmax(results))
+                    # predictions.append(np.argmax(results))
 
-                    ##TODO: Może dodać cos takiego że sekwencja będzie dłuższa niż 30 framów, potem przeszuka się to całe w poszukiwaniu różnych
-                    ## znaków i zwórci ten z największym prawdopodobieństwem?
-                    if np.unique(predictions[-10:])[0] == np.argmax(results):
-                        if results[np.argmax(results)] >= config.THRESHOLD:
-                            current_sentence = Actions.available_actions[np.argmax(results)]
-                            if current_sentence == "_":
-                                continue
-                            if len(sentence) > 0:
-                                if current_sentence != sentence[-1]:
-                                    sentence.append(current_sentence)
-                                    print(Actions.available_actions[np.argmax(results)], results[np.argmax(results)])
-                            else:
+                    # if np.unique(predictions[-10:])[0] == np.argmax(results):
+                    #     predictions = []
+                    print(Actions.available_actions[np.argmax(results)], results[np.argmax(results)])
+                    if results[np.argmax(results)] >= config.THRESHOLD:
+                        sequence = []
+                        current_sentence = Actions.available_actions[np.argmax(results)]
+                        if current_sentence == "_":
+                            continue
+                        if len(sentence) > 0:
+                            if current_sentence != sentence[-1]:
                                 sentence.append(current_sentence)
-                                print(Actions.available_actions[np.argmax(results)], results[np.argmax(results)])
+                                print(current_sentence, results[np.argmax(results)])
+                        else:
+                            sentence.append(current_sentence)
+                            print(current_sentence, results[np.argmax(results)])
 
                     if len(sentence) > 5:
                         sentence = sentence[-5:]
@@ -120,8 +126,9 @@ class Tracer:
 ## TODO: Usprawnić proces
 ## TODO: Pomyślec czy może być niestandardowa liczba framów?
 ## TODO: Dodać GUI z możlwością zapisu nagrania z którego będzie się potem mogło uczyć
-## TODO: Dodać możlwiosć uczenia nie z kamerki a z filmików
-
+## TODO: Dodać możlwiosć uczenia nie z kamerki a z filmików1
+##TODO: Może dodać cos takiego że sekwencja będzie dłuższa niż 30 framów, potem przeszuka się to całe w poszukiwaniu różnych
+## znaków i zwórci ten z największym prawdopodobieństwem?
 
 ## TODO: !!!!!! NIE ROBI TEGO GRAFICZNIE!!!! DODAC MENU W TERMINALU GDZIE MOZNA WYBIERAC CZY CHCESZ DODAC NOWE ZNAKI CZY MOZE APPENDOWAC CZY NADPISAC
 

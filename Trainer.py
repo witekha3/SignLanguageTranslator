@@ -7,6 +7,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.python.keras.callbacks import EarlyStopping
 
 import config
 from Actions import Actions
@@ -50,11 +51,11 @@ class Trainer:
     def _prepare_model():
         model = Sequential()
         shape = (config.NUM_OF_FRAMES, sum([i for i in BPExtractor.POINTS_NUM.values()]))
-        model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=shape))
-        model.add(LSTM(128, return_sequences=True, activation='relu'))
-        model.add(LSTM(64, return_sequences=False, activation='relu'))
-        model.add(Dense(64, activation='relu'))
-        model.add(Dense(32, activation='relu'))
+        model.add(LSTM(64, return_sequences=True, activation='tanh', input_shape=shape))
+        model.add(LSTM(128, return_sequences=True, activation='tanh'))
+        model.add(LSTM(64, return_sequences=False, activation='tanh'))
+        model.add(Dense(64, activation='tanh'))
+        model.add(Dense(32, activation='tanh'))
         model.add(Dense(Actions.available_actions.shape[0], activation='softmax'))
         model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
         return model
@@ -64,7 +65,9 @@ class Trainer:
         self._prepare_dir_for_logs()
         tensor_board = TensorBoard(log_dir=config.LOG_DIR)
         model = Trainer._prepare_model()
-        model.fit(X_train, Y_train, epochs=config.EPOCHS, callbacks=[tensor_board])
+        # patient early stopping
+        es = EarlyStopping(monitor='loss', mode='min', verbose=1, patience=200) #Available metrics are: loss,categorical_accuracy
+        model.fit(X_train, Y_train, epochs=config.EPOCHS, callbacks=[tensor_board, es])
         model.summary()
         model.save(config.MODEL_FILENAME)
         return model
