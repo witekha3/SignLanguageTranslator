@@ -48,6 +48,7 @@ class Tracer:
                                            min_tracking_confidence=config.MIN_TRACKING_CONFIDENCE) as holistic:
             for idx, action in enumerate(Actions.available_actions):
                 all_boyd_points = []
+                action = "test222"
                 for repeat_nbr in range(config.NUM_OF_CAPT_REPEATS):
                     for frame_nbr in range(config.NUM_OF_FRAMES):
                         detection_results = self._prepare_image_and_detection(holistic)
@@ -80,22 +81,12 @@ class Tracer:
                 sequence = sequence[-config.NUM_OF_FRAMES:]
 
                 if len(sequence) == config.NUM_OF_FRAMES:
-                    # sequence = np.resize(np.asarray(sequence), (30, 1662))
 
                     results = model.predict(np.expand_dims(sequence, axis=0))[0]
 
-                    # if results[np.argmax(results)] > config.THRESHOLD:
-                    #     print(Actions.available_actions[np.argmax(results)], results[np.argmax(results)])
-                    # predictions.append(np.argmax(results))
-
-                    # if np.unique(predictions[-10:])[0] == np.argmax(results):
-                    #     predictions = []
-                    print(Actions.available_actions[np.argmax(results)], results[np.argmax(results)])
                     if results[np.argmax(results)] >= config.THRESHOLD:
                         sequence = []
                         current_sentence = Actions.available_actions[np.argmax(results)]
-                        if current_sentence == "_":
-                            continue
                         if len(sentence) > 0:
                             if current_sentence != sentence[-1]:
                                 sentence.append(current_sentence)
@@ -133,5 +124,5 @@ class Tracer:
 ## TODO: !!!!!! NIE ROBI TEGO GRAFICZNIE!!!! DODAC MENU W TERMINALU GDZIE MOZNA WYBIERAC CZY CHCESZ DODAC NOWE ZNAKI CZY MOZE APPENDOWAC CZY NADPISAC
 
 # Tracer().start_recording()
-# Trainer().train_and_save_model()
-Tracer().start_recognizing()
+Trainer().train_and_save_model()
+# Tracer().start_recognizing()

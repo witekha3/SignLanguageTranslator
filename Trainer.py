@@ -34,7 +34,11 @@ class Trainer:
         data = {}
         for action in Actions.available_actions:
             try:
-                data[action] = np.split(BPExtractor.load(action), config.NUM_OF_CAPT_REPEATS)
+                if action=="test":
+                    a=10
+                else:
+                    a=90
+                data[action] = np.split(BPExtractor.load(action), a)
             except ValueError:
                 print(f"Error in action {action}! Skipping...")
                 Actions.available_actions.remove(action)
@@ -42,7 +46,11 @@ class Trainer:
         for key, value in data.items():
             repeats_num = min([len(value) for value in data.values()])
             print(f"Repeats found: {repeats_num}")
-            for body_points in value[:repeats_num]:
+            if key == "test":
+                a = 10
+            else:
+                a = 90
+            for body_points in value[:a]:
                 features.append(body_points)
                 train.append(self.label_map[key])
         return train_test_split(np.array(features), to_categorical(train).astype(int), test_size=config.TEST_SIZE)
@@ -51,7 +59,7 @@ class Trainer:
     def _prepare_model():
         model = Sequential()
         shape = (config.NUM_OF_FRAMES, sum([i for i in BPExtractor.POINTS_NUM.values()]))
-        model.add(LSTM(64, return_sequences=True, activation='tanh', input_shape=shape))
+        model.add(LSTM(64, return_sequences=True, activation='tanh', input_shape=(None, 1662)))
         model.add(LSTM(128, return_sequences=True, activation='tanh'))
         model.add(LSTM(64, return_sequences=False, activation='tanh'))
         model.add(Dense(64, activation='tanh'))
