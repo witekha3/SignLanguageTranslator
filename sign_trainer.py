@@ -1,6 +1,7 @@
 import os
 import shutil
 
+import numpy as np
 from tensorflow.python.keras.utils.np_utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
@@ -40,8 +41,9 @@ class SignTrainer:
 
     def train_generator(self):
         for index, row in self.data.iterrows():
-            x_train = row["data"]
-            y_train = to_categorical(self.label_map[row["action"]])
+            # x_train = row["data"]
+            x_train = np.stack([i.tolist() for i in row["data"]])
+            y_train = to_categorical(self.label_map[row["action"]]).astype(int)
             yield x_train, y_train
 
     def train_data(self, save=False):

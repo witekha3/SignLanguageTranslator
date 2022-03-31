@@ -86,5 +86,6 @@ class Trainer:
         model.load_weights(config.MODEL_FILENAME)
         return model
 
+Trainer().train_and_save_model()
 
 
