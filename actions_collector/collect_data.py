@@ -51,9 +51,7 @@ def collect_actions() -> None:
                     video_cap = cv2.VideoCapture(filename)
                     detector = BodyDetector(video_cap)
                     body_points = detector.detect_points(gloss_start, gloss_end)
-                    # detector.save_points(body_points, sign)
+                    detector.save_points(body_points, sign)
         except Exception as ex:
             logging.error(ex)
 
-
-collect_actions()

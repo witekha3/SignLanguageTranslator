@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # PyCharm
-.idea/
+../Do magisterki/SignLanguageTranslator/.idea/
 
 # Private
 old_one/ForMyself/
@@ -139,3 +139,6 @@ old_one/ForMyself/
 
 # Test data
 BDDir/
+
+# File with all collected data
+actions.pkl

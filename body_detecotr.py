@@ -132,7 +132,7 @@ class BodyDetector:
         :return: None
         """
         if data:
-            file = os.path.join(config.ROOT_DIR, "actions.pkl")
+            file = os.path.join(config.ROOT_DIR, "../Do magisterki/SignLanguageTranslator/actions.pkl")
             if os.path.isfile(file):
                 df = pd.read_pickle(file)
                 if data not in df["data"].values:
@@ -151,7 +151,7 @@ class BodyDetector:
         """
         :return: Saved actions
         """
-        file = os.path.join(config.ROOT_DIR, "actions.pkl")
+        file = os.path.join(config.ROOT_DIR, "../Do magisterki/SignLanguageTranslator/actions.pkl")
         if os.path.isfile(file):
             return pd.read_pickle(file)
         else:
