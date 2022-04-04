@@ -2,11 +2,11 @@ import os
 import shutil
 
 import numpy as np
+from tensorflow.python.keras import Sequential
+from tensorflow.python.keras.layers import Masking, LSTM, Dense
 from tensorflow.python.keras.utils.np_utils import to_categorical
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-from tensorflow.keras.callbacks import TensorBoard
-from tensorflow.python.keras.callbacks import EarlyStopping
+from tensorflow.python.keras.callbacks import EarlyStopping, TensorBoard
+from sklearn.model_selection import train_test_split
 
 import config
 from body_detecotr import BodyDetector
@@ -18,7 +18,9 @@ class SignTrainer:
     def __init__(self):
         self.data = BodyDetector.get_points()
         self.label_map = {label: num for num, label in enumerate(self.data["action"].unique())}
+        self.max_sequence_len = self.data["data"].map(len).max()
         self._prepare_dir_for_logs()
+        self.special_val = -10
         self.model_path = os.path.join(config.TENSOR_DIR, "model.h5")
 
     @staticmethod
@@ -28,9 +30,9 @@ class SignTrainer:
 
     def _prepare_model(self):
         model = Sequential()
-        # shape = (config.NUM_OF_FRAMES, sum([i for i in BPExtractor.POINTS_NUM.values()]))
         # act relu
-        model.add(LSTM(64, return_sequences=True, activation='tanh', input_shape=(None, sum(POINTS_NUM.values()))))
+        model.add(Masking(mask_value=self.special_val, input_shape=(self.max_sequence_len, sum(POINTS_NUM.values()))))
+        model.add(LSTM(64, return_sequences=True, activation='tanh'))
         model.add(LSTM(128, return_sequences=True, activation='tanh'))
         model.add(LSTM(64, return_sequences=False, activation='tanh'))
         model.add(Dense(64, activation='tanh'))
@@ -40,18 +42,28 @@ class SignTrainer:
         return model
 
     def train_generator(self):
+        features = []
+        train = []
         for index, row in self.data.iterrows():
-            # x_train = row["data"]
-            x_train = np.stack([i.tolist() for i in row["data"]])
-            y_train = to_categorical(self.label_map[row["action"]]).astype(int)
-            yield x_train, y_train
+            # Padding to max sequence len
+            x_train = np.pad(row["data"], [(self.max_sequence_len - len(row["data"]), 0), (0, 0)], 'constant',
+                   constant_values=(self.special_val))
+            y_train = self.label_map[row["action"]]
+
+            features.append(x_train)
+            train.append(y_train)
+        return train_test_split(np.array(features), to_categorical(train).astype(int), test_size=0.3)
 
     def train_data(self, save=False):
         tensor_board = TensorBoard(log_dir=config.TENSOR_DIR)
         # patient early stopping
         es = EarlyStopping(monitor='loss', mode='min', verbose=1, patience=200) #Available metrics are: loss,categorical_accuracy
         model = self._prepare_model()
-        model.fit(self.train_generator(), epochs=config.EPOCHS, callbacks=[tensor_board, es])
+        x_train, x_test, y_train, y_test = self.train_generator()
+        model.fit(x_train, y_train, epochs=config.EPOCHS, callbacks=[tensor_board, es], validation_data=(x_test, y_test))
+
+        # TODO: https://datascience.stackexchange.com/questions/48796/how-to-feed-lstm-with-different-input-array-sizes
+        # model.fit(self.train_generator(), epochs=config.EPOCHS, callbacks=[tensor_board, es])
         model.summary()
         if save:
             model.save(self.model_path)
@@ -64,4 +76,4 @@ class SignTrainer:
 
 
 a = SignTrainer()
-a.train_data()
+a.train_data(True)
