@@ -136,7 +136,7 @@ dmypy.json
 old_one/ForMyself/
 
 # Model
-*.h5
+#*.h5
 
 # Test data
 BDDir/

@@ -67,13 +67,11 @@ class BodyDetector:
         :return: A NamedTuple with fields describing the landmarks on the most prominate person detected:
         """
         _, frame = self._video_capture.read()
-        if self._black_image is None:
-            self._black_image = np.zeros(frame.shape, dtype=np.uint8)
         self._current_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         self._current_image.flags.writeable = False
         detection_results = model.process(self._current_image)
         self._current_image.flags.writeable = True
-        self._current_image = cv2.cvtColor(self._black_image, cv2.COLOR_RGB2BGR)
+        self._current_image = cv2.cvtColor(self._current_image, cv2.COLOR_RGB2BGR)
         return detection_results
 
     def _draw_all_body_points(self, detection_results: NamedTuple) -> None:
@@ -88,7 +86,7 @@ class BodyDetector:
         self._draw_landmarks(detection_results.pose_landmarks, self._holistic_model.POSE_CONNECTIONS)
 
     @staticmethod
-    def _get_body_points(detection_results: NamedTuple) -> ndarray:
+    def get_body_points(detection_results: NamedTuple) -> ndarray:
         """
         Flattens the detection result to a single vector
         :param detection_results: Results from the detection
@@ -120,7 +118,7 @@ class BodyDetector:
             for i in range(frames_start, frames_end):
                 self._video_capture.set(1, i)
                 detection_results = self._run_detection(holistic)
-                body_points.append(self._get_body_points(detection_results))
+                body_points.append(self.get_body_points(detection_results))
         return body_points
 
     @staticmethod
