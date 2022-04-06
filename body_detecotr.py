@@ -64,7 +64,7 @@ class BodyDetector:
         """
         Runs landmark detection
         :param model: MediaPipe holistic model
-        :return: A NamedTuple with fields describing the landmarks on the most prominate person detected:
+        :return: A frame and a namedTuple with fields describing the landmarks on the most prominate person detected:
         """
         _, frame = self._video_capture.read()
         self._current_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)

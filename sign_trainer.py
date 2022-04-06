@@ -24,6 +24,7 @@ class SignTrainer:
         ###
         self.label_map = {label: num for num, label in enumerate(self.data["action"].unique())}
         self.max_sequence_len = self.data["data"].map(len).max()
+        self.min_sequence_len = self.data["data"].map(len).min()
         self.special_val = -10
         self.model_path = os.path.join(config.TENSOR_DIR, "model.h5")
 
@@ -87,5 +88,5 @@ class SignTrainer:
         return model
 
 
-a = SignTrainer()
-a.train_data(True)
+# a = SignTrainer()
+# a.train_data(False) #NOT SAVING
