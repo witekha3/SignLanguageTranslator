@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Tuple, Optional, List, NamedTuple
+from typing import Tuple, Optional, List, NamedTuple, Dict
 
 import mediapipe as mp
 import cv2
@@ -86,59 +86,67 @@ class BodyDetector:
         self._draw_landmarks(detection_results.pose_landmarks, self._holistic_model.POSE_CONNECTIONS)
 
     @staticmethod
-    def get_body_points(detection_results: NamedTuple) -> ndarray:
+    def get_body_points(detection_results: NamedTuple) -> Dict[str, List[list]]:
         """
+        #TODO: CHANGE DOCSTRING
         Flattens the detection result to a single vector
         :param detection_results: Results from the detection
         :return: Vector of landmarks
         """
-        points = []
+        body_points = {}
         for key in POINTS_NUM.keys():
+            points = []
             landmarks = getattr(detection_results, f"{key.lower()}_landmarks")
             if getattr(detection_results, f"{key.lower()}_landmarks"):
                 for landmark in landmarks.landmark:
                     if key == "POSE":
-                        points.append(np.array([landmark.x, landmark.y, landmark.z, landmark.visibility]).flatten())
+                        points.append(list(np.array([landmark.x, landmark.y, landmark.z, landmark.visibility]).flatten()))
                     else:
-                        points.append(np.array([landmark.x, landmark.y, landmark.z]).flatten())
+                        points.append(list(np.array([landmark.x, landmark.y, landmark.z]).flatten()))
             else:
-                points.append(np.zeros(POINTS_NUM[key]))
-        return np.concatenate(points)
+                points.append(list(np.zeros(POINTS_NUM[key])))
+            body_points[key] = points
+        return body_points
 
-    def detect_points(self, frames_start: int, frames_end: int) -> List[ndarray]:
+    def detect_points(self, frames_start: int, frames_end: int) -> pd.DataFrame:
         """
+        #TODO: CHANGE DOCSTRING
         Determines the landmarks for each frame in the interval
         :param frames_start: Initial frame number
         :param frames_end: Final frame number
         :return: Landmark vector for each frame
         """
-        body_points = []
+        body_points = pd.DataFrame()
         with self._holistic_model.Holistic(min_detection_confidence=config.MIN_DETECTION_CONFIDENCE,
                                            min_tracking_confidence=config.MIN_TRACKING_CONFIDENCE) as holistic:
             for i in range(frames_start, frames_end):
                 self._video_capture.set(1, i)
                 detection_results = self._run_detection(holistic)
-                body_points.append(self.get_body_points(detection_results))
+                body_points = body_points.append(self.get_body_points(detection_results), ignore_index=True)
         return body_points
 
     @staticmethod
-    def save_points(data: List[ndarray], action: str):
+    def save_points(data: pd.DataFrame, action: str):
         """
         Saves landmark sequences from frames to a collective pandas dataframe
         :param data: Data to save
         :param action: Name for the frame sequence
         :return: None
         """
-        if data:
-            file = os.path.join(config.ROOT_DIR, "../Do magisterki/SignLanguageTranslator/actions.pkl")
+        if not data.empty:
+            file = os.path.join(config.ROOT_DIR, "actions.pkl")
+            data["ACTION"] = action
+            data = data.groupby("ACTION").agg(list)
             if os.path.isfile(file):
                 df = pd.read_pickle(file)
-                if data not in df["data"].values:
-                    df = df.append({"action": action, "data": data}, ignore_index=True)
+
+                if not data.isin(df).all().all():
+                    df = df.append(data)
                 else:
                     logging.warning("Data already exists in actions.pkl")
+                    return
             else:
-                df = pd.DataFrame({"action": action, "data": [data]})
+                df = data
             df.to_pickle(file)
             logging.info(f"Points for action {action} saved to {file}!")
         else:
@@ -149,7 +157,7 @@ class BodyDetector:
         """
         :return: Saved actions
         """
-        file = os.path.join(config.ROOT_DIR, "../Do magisterki/SignLanguageTranslator/actions.pkl")
+        file = os.path.join(config.ROOT_DIR, "actions.pkl")
         if os.path.isfile(file):
             return pd.read_pickle(file)
         else:

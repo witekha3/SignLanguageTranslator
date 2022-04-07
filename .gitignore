@@ -142,4 +142,4 @@ old_one/ForMyself/
 BDDir/
 
 # File with all collected data
-actions.pkl
+*.pkl
