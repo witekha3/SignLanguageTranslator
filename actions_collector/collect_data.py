@@ -1,5 +1,5 @@
+import copy
 import os
-import time
 from os import listdir
 
 import numpy as np
@@ -9,15 +9,13 @@ from urllib import error as url_error
 import tempfile
 import cv2
 import logging
-import mediapipe as mp
-from mediapipe.framework.formats import landmark_pb2
-from mediapipe.framework.formats.landmark_pb2 import NormalizedLandmark
 
 from body_detecotr import BodyDetector, POINTS_NUM
 
 logging.basicConfig(level=logging.DEBUG)
 
-VIDEOS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "videos")
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+VIDEOS_DIR = os.path.join(ROOT_DIR, "videos")
 
 
 def _download_video(url: str, file_path: str) -> str:
@@ -96,4 +94,25 @@ def collect_actions(save_to_temp=True) -> None:
                     _save_action(action, filename, gloss_start, gloss_end)
 
 
-# collect_actions(save_to_temp=False)
+def create_smaller_dataset():
+
+    def round_values(df_row):
+        for part in body_parts:
+            row[part] = [np.round(x, 4) for x in df_row["FACE"]]
+
+    data = BodyDetector.get_points().sort_values("ACTION")[3:103]
+    body_parts = [key for key in POINTS_NUM.keys()]
+    for index, row in data.iterrows():
+        round_values(row)
+    data.to_pickle(os.path.join(ROOT_DIR, "actions_small.pkl"))
+
+
+def load_smaller_dataset():
+    file = os.path.join(ROOT_DIR, "actions_small.pkl")
+    if os.path.isfile(file):
+        return pd.read_pickle(file)
+    else:
+        return None
+
+
+

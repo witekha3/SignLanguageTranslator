@@ -15,8 +15,8 @@ class Translator:
 
     def __init__(self):
         self.trainer = SignTrainer()
-        # self.model = self.trainer.load_model()
-        # self.translations = list(self.trainer.label_map)
+        self.model = self.trainer.load_model()
+        self.translations = list(self.trainer.label_map)
 
     def translate_to_eng(self, sequence):
         sequence = self.trainer.pad_sequence(sequence)

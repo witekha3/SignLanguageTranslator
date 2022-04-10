@@ -9,6 +9,7 @@ from tensorflow.python.keras.callbacks import EarlyStopping, TensorBoard
 from sklearn.model_selection import train_test_split
 
 import config
+from actions_collector.collect_data import load_smaller_dataset
 from body_detecotr import BodyDetector
 from body_detecotr import POINTS_NUM
 
@@ -16,17 +17,15 @@ from body_detecotr import POINTS_NUM
 class SignTrainer:
 
     def __init__(self):
-        self.data = BodyDetector.get_points()
+        # self.data = BodyDetector.get_points()
         #only for test
-        # self.data = self.data.sort_values("action")[100:400]
-        # self.data["data"] = self.data["data"].apply(lambda x: [np.around(i, 4) for i in x])
-        # self.data = self.data.loc[self.data["action"].str.contains("0|1|2|3|4|5|6|7|8|9|10|-fr")==False]
+        self.data = load_smaller_dataset()
         ###
-        # self.label_map = {label: num for num, label in enumerate(self.data["action"].unique())}
-        # self.max_sequence_len = self.data["data"].map(len).max()
-        # self.min_sequence_len = self.data["data"].map(len).min()
-        # self.special_val = -10
-        # self.model_path = os.path.join(config.TENSOR_DIR, "model.h5")
+        self.label_map = {label: num for num, label in enumerate(set(self.data.index.to_list()))}
+        self.max_sequence_len = self.data[list(POINTS_NUM.keys())[0]].map(len).max()
+        self.min_sequence_len = self.data[list(POINTS_NUM.keys())[0]].map(len).min()
+        self.special_val = -10
+        self.model_path = os.path.join(config.TENSOR_DIR, "model.h5")
 
     @staticmethod
     def _prepare_dir_for_logs():
