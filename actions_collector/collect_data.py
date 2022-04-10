@@ -1,9 +1,11 @@
 import os
+import time
 from os import listdir
 
 import numpy as np
 import pandas as pd
 import urllib.request
+from urllib import error as url_error
 import tempfile
 import cv2
 import logging
@@ -16,6 +18,7 @@ from body_detecotr import BodyDetector, POINTS_NUM
 logging.basicConfig(level=logging.DEBUG)
 
 VIDEOS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "videos")
+
 
 def _download_video(url: str, file_path: str) -> str:
     """
@@ -31,10 +34,29 @@ def _download_video(url: str, file_path: str) -> str:
     if os.path.exists(file_path):
         return file_path
 
-    logging.info(f"Saving file to {file_path}...")
+    logging.info(f"Downloading file from {url}")
     urllib.request.urlretrieve(url, file_path)
-    logging.info(f"File save to {file_path}")
+    logging.info(f"File saved to {file_path}")
     return file_path
+
+
+def _save_action(action: str, filename: str, gloss_start: int, gloss_end: int) -> None:
+    """
+    Saves the points from the action
+    :param action: action name
+    :param filename: filename for the video containing the action
+    :param gloss_start: action start frame
+    :param gloss_end: action end frame
+    :return: None
+    """
+    video_cap = cv2.VideoCapture(filename)
+    detector = BodyDetector(video_cap)
+    try:
+        body_points = detector.detect_points(gloss_start, gloss_end)
+    except cv2.error:
+        logging.error(f"CV2 error! Action: {action}, file: {filename}")
+        return
+    detector.save_points(body_points, action)
 
 
 def collect_actions(save_to_temp=True) -> None:
@@ -46,63 +68,32 @@ def collect_actions(save_to_temp=True) -> None:
     uta_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uta_handshapes")
     for file in [file for file in listdir(uta_dir)]:
         df = pd.read_csv(os.path.join(uta_dir, file), header=1)
-        try:
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                for _, row in df.iterrows():
-                    sign = row["Sign gloss"]
-                    mov_url = f"http://vlm1.uta.edu/~haijing/asl/camera1/{row['MOV']}"
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            for _, row in df.iterrows():
+                for i in range(1, 5):
+                    action = row["Sign gloss"]
                     gloss_start = row["Gloss start"]
                     gloss_end = row["Gloss end"]
-                    if mov_url not in saved_videos:
-                        if not save_to_temp:
-                            filename = _download_video(mov_url, os.path.join(VIDEOS_DIR, row['MOV']))
+                    mov_name = row['MOV'].split(".mov")[0][:-1]+str(i)+".mov"
+                    mov_url = f"http://vlm1.uta.edu/~haijing/asl/camera1/{mov_name}"
+
+                    try:
+                        if mov_url not in saved_videos:
+                            if not save_to_temp:
+                                filename = _download_video(mov_url, os.path.join(VIDEOS_DIR, mov_name))
+                            else:
+                                filename = _download_video(mov_url, os.path.join(tmp_dir, mov_name))
+                            saved_videos[mov_url] = filename
                         else:
-                            filename = _download_video(mov_url, os.path.join(tmp_dir, row['MOV']))
-                        saved_videos[mov_url] = filename
-                    else:
-                        filename = saved_videos[mov_url]
-
-                    video_cap = cv2.VideoCapture(filename)
-                    detector = BodyDetector(video_cap)
-                    body_points = detector.detect_points(gloss_start, gloss_end)
-                    detector.save_points(body_points, sign)
-        except Exception as ex:
-            logging.error(ex)
-
-
-def display_saved_points(action_name: str, nbr: int = 0):
-    bd_points = BodyDetector.get_points()
-    action_per_frames = bd_points.loc[[action_name]].apply(lambda x: x[nbr])
-    landmarks_in_frame = []
-    for i, data in action_per_frames.iterrows():
-        landmarks_dict = {}
-        for key in POINTS_NUM.keys():
-            landmark_list = []
-            for point in data[key]:
-                nl = NormalizedLandmark()
-                nl.x = point[0]
-                nl.y = point[1]
-                nl.z = point[2]
-                if key == "POSE":
-                    nl.visibility = point[3]
-                landmark_list.append(nl)
-            landmarks_dict[key] = landmark_pb2.NormalizedLandmarkList(landmark=landmark_list)
-        landmarks_in_frame.append(landmarks_dict)
-
-    for landmarks in landmarks_in_frame:
-        img = np.zeros([800, 800, 3], dtype=np.uint8)
-        img.fill(255)
-        mp.solutions.drawing_utils.draw_landmarks(img, landmarks["FACE"], mp.solutions.holistic.FACEMESH_TESSELATION)
-        mp.solutions.drawing_utils.draw_landmarks(img, landmarks["RIGHT_HAND"], mp.solutions.holistic.HAND_CONNECTIONS)
-        mp.solutions.drawing_utils.draw_landmarks(img, landmarks["LEFT_HAND"], mp.solutions.holistic.HAND_CONNECTIONS)
-        mp.solutions.drawing_utils.draw_landmarks(img, landmarks["POSE"], mp.solutions.holistic.POSE_CONNECTIONS)
-        cv2.imshow("aa", img)
-        if cv2.waitKey(10) & 0xFF == ord('q'):
-            break
-        # TODO: Maybe add a text to sign option?
-
-
+                            filename = saved_videos[mov_url]
+                            logging.info(f"File {filename} already downloaded!")
+                    except url_error.HTTPError:
+                        logging.warning(f"Url: {mov_url} not found!")
+                        continue
+                    except url_error.URLError as err:
+                        logging.error(f"{err}. Url: {mov_url}")
+                        continue
+                    _save_action(action, filename, gloss_start, gloss_end)
 
 
 # collect_actions(save_to_temp=False)
-display_saved_points("again")

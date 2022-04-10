@@ -18,15 +18,15 @@ class SignTrainer:
     def __init__(self):
         self.data = BodyDetector.get_points()
         #only for test
-        self.data = self.data.sort_values("action")[100:400]
-        self.data["data"] = self.data["data"].apply(lambda x: [np.around(i, 4) for i in x])
+        # self.data = self.data.sort_values("action")[100:400]
+        # self.data["data"] = self.data["data"].apply(lambda x: [np.around(i, 4) for i in x])
         # self.data = self.data.loc[self.data["action"].str.contains("0|1|2|3|4|5|6|7|8|9|10|-fr")==False]
         ###
-        self.label_map = {label: num for num, label in enumerate(self.data["action"].unique())}
-        self.max_sequence_len = self.data["data"].map(len).max()
-        self.min_sequence_len = self.data["data"].map(len).min()
-        self.special_val = -10
-        self.model_path = os.path.join(config.TENSOR_DIR, "model.h5")
+        # self.label_map = {label: num for num, label in enumerate(self.data["action"].unique())}
+        # self.max_sequence_len = self.data["data"].map(len).max()
+        # self.min_sequence_len = self.data["data"].map(len).min()
+        # self.special_val = -10
+        # self.model_path = os.path.join(config.TENSOR_DIR, "model.h5")
 
     @staticmethod
     def _prepare_dir_for_logs():

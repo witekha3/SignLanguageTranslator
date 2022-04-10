@@ -28,10 +28,10 @@ class LiveVideoTranslator(BodyDetector):
 
                 if (len(sequence) == self.translator.trainer.max_sequence_len): #or (
                         #len(sequence) == self.translator.trainer.min_sequence_len):
-                    translation = self.translator.translate(sequence)
+                    translation = self.translator.translate_to_eng(sequence)
                     sequence = []
                     print(translation)
-        translation = self.translator.translate(sequence)
+        translation = self.translator.translate_to_eng(sequence)
         print(translation)
     #TODO: ZAPISAC GESTY W PANDAS JAKO OSOBNO GLOWA RECE ITD ABY MOZNA BYLO POTEM ODTWORZYC NAGRANIE Z PUNKTOW
 

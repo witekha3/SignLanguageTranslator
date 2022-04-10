@@ -143,3 +143,6 @@ BDDir/
 
 # File with all collected data
 *.pkl
+
+# All videos files
+videos/

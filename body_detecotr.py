@@ -88,10 +88,9 @@ class BodyDetector:
     @staticmethod
     def get_body_points(detection_results: NamedTuple) -> Dict[str, List[list]]:
         """
-        #TODO: CHANGE DOCSTRING
-        Flattens the detection result to a single vector
+        Flattens the detection result to a single vector for each body part
         :param detection_results: Results from the detection
-        :return: Vector of landmarks
+        :return: Dictionary of points for each body part
         """
         body_points = {}
         for key in POINTS_NUM.keys():
@@ -110,7 +109,6 @@ class BodyDetector:
 
     def detect_points(self, frames_start: int, frames_end: int) -> pd.DataFrame:
         """
-        #TODO: CHANGE DOCSTRING
         Determines the landmarks for each frame in the interval
         :param frames_start: Initial frame number
         :param frames_end: Final frame number
@@ -139,12 +137,12 @@ class BodyDetector:
             data = data.groupby("ACTION").agg(list)
             if os.path.isfile(file):
                 df = pd.read_pickle(file)
-
-                if not data.isin(df).all().all():
-                    df = df.append(data)
-                else:
-                    logging.warning("Data already exists in actions.pkl")
-                    return
+                # TODO: FIX THIS IF
+                # if not data.isin(df).all().all():
+                df = pd.concat([df, data])
+                # else:
+                #     logging.warning(f"Action {action} already exists in actions.pkl")
+                #     return
             else:
                 df = data
             df.to_pickle(file)
