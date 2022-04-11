@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 """
 A dictionary storing the number of all points that mediapipe finds for each body part
+Sum of points = 1662
 """
 POINTS_NUM = {
     "POSE": 132,
