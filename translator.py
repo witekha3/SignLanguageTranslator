@@ -1,3 +1,4 @@
+import time
 from typing import List, Dict, Any
 
 import cv2
@@ -15,7 +16,7 @@ class Translator:
 
     def __init__(self):
         self.trainer = SignTrainer()
-        self.model = self.trainer.load_model()
+        # self.model = self.trainer.load_model()
         self.translations = list(self.trainer.label_map)
 
     def translate_to_eng(self, sequence):
@@ -35,12 +36,12 @@ class Translator:
             for key in POINTS_NUM.keys():
                 landmark_list = []
                 for point in data[key]:
+                    # TODO: make it prettier
                     nl = NormalizedLandmark()
                     nl.x = point[0]
                     nl.y = point[1]
                     nl.z = point[2]
-                    if key == "POSE":
-                        nl.visibility = point[3]
+                    nl.visibility = point[3]
                     landmark_list.append(nl)
                 landmarks_dict[key] = landmark_pb2.NormalizedLandmarkList(landmark=landmark_list)
             landmarks_in_frame.append(landmarks_dict)
@@ -55,19 +56,21 @@ class Translator:
 
     def _display_action(self, action_name: str, repeat_nbr: int = 0):
         action_landmarks = self._action_to_landmarks(action_name, repeat_nbr=repeat_nbr)
-        for landmarks in action_landmarks:
-            img = np.zeros([500, 500, 3], dtype=np.uint8)
-            img.fill(255)
-            # TODO: REFACTOR! THIS CODE EXISTS IN BODY_DETECTOR
-            self._display(img, landmarks["FACE"], mp.solutions.holistic.FACEMESH_TESSELATION)
-            self._display(img, landmarks["RIGHT_HAND"], mp.solutions.holistic.HAND_CONNECTIONS)
-            self._display(img, landmarks["LEFT_HAND"], mp.solutions.holistic.HAND_CONNECTIONS)
-            self._display(img, landmarks["POSE"], mp.solutions.holistic.POSE_CONNECTIONS)
+        while True:
+            for landmarks in action_landmarks:
+                img = np.zeros([500, 500, 3], dtype=np.uint8)
+                img.fill(255)
+                # TODO: REFACTOR! THIS CODE EXISTS IN BODY_DETECTOR
+                self._display(img, landmarks["FACE"], mp.solutions.holistic.FACEMESH_TESSELATION)
+                self._display(img, landmarks["RIGHT_HAND"], mp.solutions.holistic.HAND_CONNECTIONS)
+                self._display(img, landmarks["LEFT_HAND"], mp.solutions.holistic.HAND_CONNECTIONS)
+                self._display(img, landmarks["POSE"], mp.solutions.holistic.POSE_CONNECTIONS)
 
-            cv2.imshow("action", img)
-            if cv2.waitKey(10) & 0xFF == ord('q'):
-                break
+                cv2.imshow("action", img)
+                if cv2.waitKey(10) & 0xFF == ord('q'):
+                    return
+            time.sleep(1)
 
-x = Translator()
-x._display_action("all2", 1)
-a=2
+
+# x = Translator()
+# x._display_action("all2", 0)

@@ -19,9 +19,9 @@ from body_detecotr import POINTS_NUM
 class SignTrainer:
 
     def __init__(self):
-        # self.data = BodyDetector.get_points()
+        self.data = BodyDetector.get_points()
         # only for test
-        self.data = load_smaller_dataset()
+        # self.data = load_smaller_dataset()
         ###
         self.label_map = {label: num for num, label in enumerate(set(self.data.index.to_list()))}
         self.max_sequence_len = self.data[list(POINTS_NUM.keys())[0]].map(len).max()
@@ -98,5 +98,5 @@ class SignTrainer:
         return model
 
 
-a = SignTrainer()
-a.train_data(False) #NOT SAVING
+# a = SignTrainer()
+# a.train_data(False) #NOT SAVING

@@ -17,13 +17,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 """
 A dictionary storing the number of all points that mediapipe finds for each body part
-Sum of points = 1662
+Sum of points = 2172
 """
 POINTS_NUM = {
     "POSE": 132,
-    "FACE": 1404,
-    "LEFT_HAND": 63,
-    "RIGHT_HAND": 63,
+    "FACE": 1872,
+    "LEFT_HAND": 84,
+    "RIGHT_HAND": 84,
 }
 
 
@@ -99,12 +99,10 @@ class BodyDetector:
             landmarks = getattr(detection_results, f"{key.lower()}_landmarks")
             if getattr(detection_results, f"{key.lower()}_landmarks"):
                 for landmark in landmarks.landmark:
-                    if key == "POSE":
-                        points.append(list(np.array([landmark.x, landmark.y, landmark.z, landmark.visibility]).flatten()))
-                    else:
-                        points.append(list(np.array([landmark.x, landmark.y, landmark.z]).flatten()))
+                    points.append(list(
+                        np.round(np.array([landmark.x, landmark.y, landmark.z, landmark.visibility]).flatten(), 6)))
             else:
-                points.append(list(np.zeros(POINTS_NUM[key])))
+                points.extend(list([list(x) for x in np.zeros((int(POINTS_NUM[key] / 4), 4))]))
             body_points[key] = points
         return body_points
 

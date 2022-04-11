@@ -84,9 +84,9 @@ def collect_actions(save_to_temp=True) -> None:
                             saved_videos[mov_url] = filename
                         else:
                             filename = saved_videos[mov_url]
-                            logging.info(f"File {filename} already downloaded!")
+                            # logging.info(f"File {filename} already downloaded!")
                     except url_error.HTTPError:
-                        logging.warning(f"Url: {mov_url} not found!")
+                        # logging.warning(f"Url: {mov_url} not found!")
                         continue
                     except url_error.URLError as err:
                         logging.error(f"{err}. Url: {mov_url}")
@@ -114,5 +114,7 @@ def load_smaller_dataset():
     else:
         return None
 
+
+collect_actions(False)
 
 
