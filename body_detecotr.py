@@ -20,10 +20,10 @@ A dictionary storing the number of all points that mediapipe finds for each body
 Sum of points = 2172
 """
 POINTS_NUM = {
-    "POSE": 132,
-    "FACE": 1872,
-    "LEFT_HAND": 84,
-    "RIGHT_HAND": 84,
+    "POSE": 132,       # 33 * 4
+    "FACE": 1872,      # 468 * 4
+    "LEFT_HAND": 84,   # 21 * 4
+    "RIGHT_HAND": 84,  # 21 * 4
 }
 
 

@@ -1,9 +1,12 @@
 import logging
 import os
 import shutil
-
+import tensorflow as tf
 import numpy as np
 from keras_preprocessing.sequence import pad_sequences
+from mediapipe.framework.formats import landmark_pb2
+from mediapipe.framework.formats.landmark_pb2 import NormalizedLandmark
+from tensorflow.python.data import Dataset
 from tensorflow.python.keras import Sequential
 from tensorflow.python.keras.layers import Masking, LSTM, Dense
 from tensorflow.python.keras.utils.np_utils import to_categorical
@@ -19,9 +22,9 @@ from body_detecotr import POINTS_NUM
 class SignTrainer:
 
     def __init__(self):
-        self.data = BodyDetector.get_points()
+        # self.data = BodyDetector.get_points()
         # only for test
-        # self.data = load_smaller_dataset()
+        self.data = load_smaller_dataset()
         ###
         self.label_map = {label: num for num, label in enumerate(set(self.data.index.to_list()))}
         self.max_sequence_len = self.data[list(POINTS_NUM.keys())[0]].map(len).max()
@@ -52,25 +55,31 @@ class SignTrainer:
         if sequence.shape[1] == self.max_sequence_len:
             return sequence
         try:
-            return pad_sequences(sequence, maxlen=self.max_sequence_len, value=self.ignor_val, padding='post', dtype=float)
+            return pad_sequences(sequence, maxlen=self.max_sequence_len, value=self.ignor_val, padding='post',
+                                 dtype=float)
         except:
-            a=2
-
-
+            a = 2
 
     def train_generator(self):
         features = []
         train = []
         for action, row in self.data.iterrows():
             # Padding to max sequence len
-            try:
-                x_train = self.pad_sequence(np.array([np.array(x) for x in row.values]))
-            except ValueError:
-                logging.warning(f"Invalid action '{action}'. Skipping...")
-                continue
+            # try:
+                # def to_tuple(lst):
+                #     return tuple(to_tuple(i) if isinstance(i, list) else float(i) for i in lst)
+                # x_train = self.pad_sequence(np.array([np.array(x).flatten() for x in row.values]))
+            # TODO: ADD PADDING
+            x_train = []
+            for i in range(0, len(row.values[0])):  # num of frames
+                flattened_points = []
+                for j in range(0, len(POINTS_NUM)):  # num of body parts
+                    flattened_points.extend(np.array(row.values[j][i]).flatten())
+                x_train.append(np.array(flattened_points))
+
             y_train = self.label_map[action]
 
-            features.append(x_train)
+            features.append(np.array(x_train))
             train.append(y_train)
         return train_test_split(np.array(features), to_categorical(train).astype(int), test_size=0.3)
 
@@ -98,5 +107,5 @@ class SignTrainer:
         return model
 
 
-# a = SignTrainer()
-# a.train_data(False) #NOT SAVING
+a = SignTrainer()
+a.train_data(False)  # NOT SAVING

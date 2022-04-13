@@ -95,15 +95,7 @@ def collect_actions(save_to_temp=True) -> None:
 
 
 def create_smaller_dataset():
-
-    def round_values(df_row):
-        for part in body_parts:
-            row[part] = [np.round(x, 4) for x in df_row["FACE"]]
-
     data = BodyDetector.get_points().sort_values("ACTION")[3:103]
-    body_parts = [key for key in POINTS_NUM.keys()]
-    for index, row in data.iterrows():
-        round_values(row)
     data.to_pickle(os.path.join(ROOT_DIR, "actions_small.pkl"))
 
 
@@ -115,6 +107,7 @@ def load_smaller_dataset():
         return None
 
 
-collect_actions(False)
+# collect_actions(False)
+# create_smaller_dataset()
 
 
