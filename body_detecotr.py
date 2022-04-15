@@ -10,6 +10,7 @@ from cv2 import VideoCapture
 from mediapipe.framework.formats.landmark_pb2 import NormalizedLandmarkList
 from mediapipe.python.solutions.holistic import Holistic
 from numpy import ndarray
+from pandas import Series
 
 import config
 
@@ -121,6 +122,21 @@ class BodyDetector:
                 detection_results = self._run_detection(holistic)
                 body_points = body_points.append(self.get_body_points(detection_results), ignore_index=True)
         return body_points
+
+    @staticmethod
+    def flatten_action(action_row: Series) -> np.ndarray:
+        """
+        Flattens action points
+        :param action_row: Action points as Series
+        :return: Array of flattened points
+        """
+        frames = []
+        for i in range(0, len(action_row.values[0])):  # num of frames
+            flattened_points = []
+            for j in range(0, len(POINTS_NUM)):  # num of body parts
+                flattened_points.extend(np.array(action_row.values[j][i]).flatten())
+            frames.append(np.array(flattened_points))
+        return np.array(frames)
 
     @staticmethod
     def save_points(data: pd.DataFrame, action: str):

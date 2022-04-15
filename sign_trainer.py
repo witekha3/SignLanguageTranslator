@@ -1,12 +1,6 @@
-import logging
 import os
 import shutil
-import tensorflow as tf
 import numpy as np
-from keras_preprocessing.sequence import pad_sequences
-from mediapipe.framework.formats import landmark_pb2
-from mediapipe.framework.formats.landmark_pb2 import NormalizedLandmark
-from tensorflow.python.data import Dataset
 from tensorflow.python.keras import Sequential
 from tensorflow.python.keras.layers import Masking, LSTM, Dense
 from tensorflow.python.keras.utils.np_utils import to_categorical
@@ -52,31 +46,14 @@ class SignTrainer:
         return model
 
     def pad_sequence(self, sequence):
-        if sequence.shape[1] == self.max_sequence_len:
-            return sequence
-        try:
-            return pad_sequences(sequence, maxlen=self.max_sequence_len, value=self.ignor_val, padding='post',
-                                 dtype=float)
-        except:
-            a = 2
+        return np.pad(sequence, [(0, self.max_sequence_len-len(sequence)), (0, 0)], 'constant', constant_values=self.ignor_val)
 
     def train_generator(self):
         features = []
         train = []
         for action, row in self.data.iterrows():
-            # Padding to max sequence len
-            # try:
-                # def to_tuple(lst):
-                #     return tuple(to_tuple(i) if isinstance(i, list) else float(i) for i in lst)
-                # x_train = self.pad_sequence(np.array([np.array(x).flatten() for x in row.values]))
-            # TODO: ADD PADDING
-            x_train = []
-            for i in range(0, len(row.values[0])):  # num of frames
-                flattened_points = []
-                for j in range(0, len(POINTS_NUM)):  # num of body parts
-                    flattened_points.extend(np.array(row.values[j][i]).flatten())
-                x_train.append(np.array(flattened_points))
-
+            x_train = BodyDetector.flatten_action(row)
+            x_train = self.pad_sequence(x_train)
             y_train = self.label_map[action]
 
             features.append(np.array(x_train))
@@ -108,4 +85,4 @@ class SignTrainer:
 
 
 a = SignTrainer()
-a.train_data(False)  # NOT SAVING
+a.train_data(True)  # NOT SAVING
