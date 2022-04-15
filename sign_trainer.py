@@ -84,5 +84,5 @@ class SignTrainer:
         return model
 
 
-a = SignTrainer()
-a.train_data(True)  # NOT SAVING
+# a = SignTrainer()
+# a.train_data(False)  # NOT SAVING
