@@ -1,3 +1,4 @@
+import logging
 import time
 from typing import List, Dict, Any
 
@@ -7,7 +8,7 @@ from mediapipe.framework.formats.landmark_pb2 import NormalizedLandmark
 import mediapipe as mp
 
 import config
-from body_detecotr import POINTS_NUM
+from body_detecotr import POINTS_NUM, BodyDetector
 from sign_trainer import SignTrainer
 import numpy as np
 
@@ -16,10 +17,14 @@ class Translator:
 
     def __init__(self):
         self.trainer = SignTrainer()
-        # self.model = self.trainer.load_model()
+        self.model = self.trainer.load_model()
         self.translations = list(self.trainer.label_map)
+        logging.debug(f"Available actions: {self.trainer.label_map.keys()}")
 
     def translate_to_eng(self, sequence):
+        sequence["ACTION"] = "ACTION"
+        sequence = sequence.groupby("ACTION").agg(list)
+        sequence = BodyDetector.flatten_action(sequence.iloc[0])
         sequence = self.trainer.pad_sequence(sequence)
         predictions = self.model.predict(np.expand_dims(sequence, axis=0))[0]
 

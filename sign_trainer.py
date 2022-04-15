@@ -36,11 +36,11 @@ class SignTrainer:
         # act !!relu!! or ?tanh?
         model.add(Masking(mask_value=self.ignor_val, input_shape=(None, sum(POINTS_NUM.values()))))
         # model.add(Masking(mask_value=self.special_val, input_shape=(self.max_sequence_len, sum(POINTS_NUM.values()))))
-        model.add(LSTM(64, return_sequences=True, activation='tanh'))
-        model.add(LSTM(128, return_sequences=True, activation='tanh'))
-        model.add(LSTM(64, return_sequences=False, activation='tanh'))
-        model.add(Dense(64, activation='tanh'))
-        model.add(Dense(32, activation='tanh'))
+        model.add(LSTM(64, return_sequences=True, activation='relu'))
+        model.add(LSTM(128, return_sequences=True, activation='relu'))
+        model.add(LSTM(64, return_sequences=False, activation='relu'))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dense(32, activation='relu'))
         model.add(Dense(len(self.label_map), activation='softmax'))
         model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
         return model
@@ -84,5 +84,5 @@ class SignTrainer:
         return model
 
 
-# a = SignTrainer()
-# a.train_data(False)  # NOT SAVING
+a = SignTrainer()
+a.train_data(True)  # NOT SAVING

@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Tuple, Optional, List, NamedTuple, Dict
+from typing import Tuple, Optional, List, NamedTuple, Dict, Union
 
 import mediapipe as mp
 import cv2
@@ -62,13 +62,15 @@ class BodyDetector:
         self._drawing.draw_landmarks(self._current_image, landmark, connections,
                                      self._drawing.DrawingSpec(color, thickness, circle_radius))
 
-    def _run_detection(self, model: Holistic) -> NamedTuple:
+    def _run_detection(self, model: Holistic) -> Union[NamedTuple, None]:
         """
         Runs landmark detection
         :param model: MediaPipe holistic model
         :return: A frame and a namedTuple with fields describing the landmarks on the most prominate person detected:
         """
         _, frame = self._video_capture.read()
+        if frame is None:
+            return None
         self._current_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         self._current_image.flags.writeable = False
         detection_results = model.process(self._current_image)
