@@ -21,9 +21,9 @@ A dictionary storing the number of all points that mediapipe finds for each body
 Sum of points = 2172
 """
 POINTS_NUM = {
-    "POSE": 132,       # 33 * 4
-    "FACE": 1872,      # 468 * 4
-    "LEFT_HAND": 84,   # 21 * 4
+    "POSE": 132,  # 33 * 4
+    "FACE": 1872,  # 468 * 4
+    "LEFT_HAND": 84,  # 21 * 4
     "RIGHT_HAND": 84,  # 21 * 4
 }
 
@@ -109,11 +109,12 @@ class BodyDetector:
             body_points[key] = points
         return body_points
 
-    def detect_points(self, frames_start: int, frames_end: int) -> pd.DataFrame:
+    def detect_points(self, frames_start: int, frames_end: int, draw: bool = False) -> pd.DataFrame:
         """
         Determines the landmarks for each frame in the interval
         :param frames_start: Initial frame number
         :param frames_end: Final frame number
+        :param draw: Setting this flag will display the points in the video
         :return: Landmark vector for each frame
         """
         body_points = pd.DataFrame()
@@ -122,6 +123,11 @@ class BodyDetector:
             for i in range(frames_start, frames_end):
                 self._video_capture.set(1, i)
                 detection_results = self._run_detection(holistic)
+                if draw:
+                    self._draw_all_body_points(detection_results)
+                    cv2.imshow('Raw Webcam Feed', self._current_image)
+                    if cv2.waitKey(10) & 0xFF == ord('q'):
+                        break
                 body_points = body_points.append(self.get_body_points(detection_results), ignore_index=True)
         return body_points
 
@@ -151,6 +157,8 @@ class BodyDetector:
         if not data.empty:
             file = os.path.join(config.ROOT_DIR, "actions.pkl")
             data["ACTION"] = action
+            if action != "hello":
+                a=2
             data = data.groupby("ACTION").agg(list)
             if os.path.isfile(file):
                 df = pd.read_pickle(file)

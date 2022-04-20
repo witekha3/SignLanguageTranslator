@@ -36,10 +36,10 @@ class LiveVideoTranslator(BodyDetector):
         translation = self.translator.translate_to_eng(sequence)
         print(translation)
     #TODO: ZAPISAC GESTY W PANDAS JAKO OSOBNO GLOWA RECE ITD ABY MOZNA BYLO POTEM ODTWORZYC NAGRANIE Z PUNKTOW
-
+#
 # a = LiveVideoTranslator()
 # a.start()
-# x = 2
+# # x = 2
 
 
 class SequenceRecognizer(BodyDetector):
@@ -69,4 +69,11 @@ class SequenceRecognizer(BodyDetector):
         translation = self.translator.translate_to_eng(sequence)
         print(translation)
 
-# SequenceRecognizer(r"C:\Users\witek\Downloads\22937.mp4").start()
+# SequenceRecognizer(r"C:\Users\witek\Downloads\24851.mp4").start() # Hello
+# SequenceRecognizer(r"C:\Users\witek\Downloads\21533.mp4").start() # Thank you
+# SequenceRecognizer(r"C:\Users\witek\Downloads\21530.mp4").start() # Please
+# SequenceRecognizer(r"C:\Users\witek\Downloads\21532.mp4").start() # Sorry ! Not working
+# SequenceRecognizer(r"C:\Users\witek\Downloads\7040.mp4").start() # I love you  ! Not working
+
+
+

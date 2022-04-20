@@ -146,3 +146,6 @@ BDDir/
 
 # All videos files
 videos/
+
+#Own videos files
+own_videos/

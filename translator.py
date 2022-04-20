@@ -31,6 +31,7 @@ class Translator:
         if predictions[np.argmax(predictions)] >= config.THRESHOLD:
             return self.translations[np.argmax(predictions)]
         else:
+            logging.debug(f"Max threshold: {self.translations[np.argmax(predictions)]} - {predictions[np.argmax(predictions)]}")
             return None
 
     def _action_to_landmarks(self, action_name: str, repeat_nbr: int = 0) -> List[Dict[str, Any]]:
@@ -77,5 +78,4 @@ class Translator:
             time.sleep(1)
 
 
-# x = Translator()
-# x._display_action("all2", 0)
+# x = Translator()._display_action("again")
