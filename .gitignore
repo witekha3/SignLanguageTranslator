@@ -149,3 +149,10 @@ videos/
 
 #Own videos files
 own_videos/
+own_const_len_videos/
+
+#Actions
+actions/
+
+# Rar files
+*.rar

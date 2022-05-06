@@ -10,7 +10,7 @@ import tempfile
 import cv2
 import logging
 
-from body_detecotr import BodyDetector, POINTS_NUM
+from body_detector import BodyDetector, POINTS_NUM
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -54,7 +54,7 @@ def _save_action(action: str, filename: str, gloss_start: int, gloss_end: int) -
     except cv2.error:
         logging.error(f"CV2 error! Action: {action}, file: {filename}")
         return
-    detector.save_points(body_points, action)
+    # detector.save_points(body_points, action)
 
 
 def collect_actions(save_to_temp=True) -> None:

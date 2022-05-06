@@ -3,8 +3,7 @@ import numpy as np
 import pandas as pd
 
 import config
-from body_detecotr import BodyDetector
-from sign_trainer import SignTrainer
+from body_detector import BodyDetector
 from translator import Translator
 
 
@@ -26,8 +25,14 @@ class LiveVideoTranslator(BodyDetector):
                 sequence = sequence.append(BodyDetector.get_body_points(detection_results), ignore_index=True)
                 cv2.imshow('Raw Webcam Feed', self._current_image)
                 if cv2.waitKey(10) & 0xFF == ord('q'):
-                    break
-
+                    translation = self.translator.translate_to_eng(sequence)
+                    print(translation)
+                    sequence = pd.DataFrame()
+                # if 0xFF == ord('w'):
+                #     translation = self.translator.translate_to_eng(sequence)
+                #     print(translation)
+                #     sequence = pd.DataFrame()
+                #
                 if (len(sequence) == self.translator.trainer.max_sequence_len): #or (
                         #len(sequence) == self.translator.trainer.min_sequence_len):
                     translation = self.translator.translate_to_eng(sequence)
@@ -36,10 +41,10 @@ class LiveVideoTranslator(BodyDetector):
         translation = self.translator.translate_to_eng(sequence)
         print(translation)
     #TODO: ZAPISAC GESTY W PANDAS JAKO OSOBNO GLOWA RECE ITD ABY MOZNA BYLO POTEM ODTWORZYC NAGRANIE Z PUNKTOW
-#
-# a = LiveVideoTranslator()
-# a.start()
-# # x = 2
+
+a = LiveVideoTranslator()
+a.start()
+x = 2
 
 
 class SequenceRecognizer(BodyDetector):
@@ -70,10 +75,19 @@ class SequenceRecognizer(BodyDetector):
         print(translation)
 
 # SequenceRecognizer(r"C:\Users\witek\Downloads\24851.mp4").start() # Hello
+# print("Predicted is Hello")
 # SequenceRecognizer(r"C:\Users\witek\Downloads\21533.mp4").start() # Thank you
+# print("Predicted is Thank you")
 # SequenceRecognizer(r"C:\Users\witek\Downloads\21530.mp4").start() # Please
+# print("Predicted is Please")
 # SequenceRecognizer(r"C:\Users\witek\Downloads\21532.mp4").start() # Sorry ! Not working
+# print("Predicted is Sorry")
+# SequenceRecognizer(r"C:\Users\witek\Downloads\27047.mp4").start() # Sorry 2 ! Not working
+# print("Predicted is Sorry")
 # SequenceRecognizer(r"C:\Users\witek\Downloads\7040.mp4").start() # I love you  ! Not working
+# print("Predicted is I love you")
+
+# SequenceRecognizer(r"E:\Own\SignLanguageTranslator\actions_collector\own_videos\cry__0.mp4").start() # I love you  ! Not working
 
 
 
