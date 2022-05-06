@@ -25,7 +25,7 @@ class Translator:
         sequence["ACTION"] = "ACTION"
         sequence = sequence.groupby("ACTION").agg(list)
         sequence = BodyDetector.flatten_action(sequence.iloc[0])
-        sequence = self.trainer.pad_sequence(sequence)
+        # sequence = self.trainer.pad_sequence(sequence)
         predictions = self.model.predict(np.expand_dims(sequence, axis=0))[0]
 
         if predictions[np.argmax(predictions)] >= config.THRESHOLD:
@@ -81,4 +81,4 @@ class Translator:
             time.sleep(1)
 
 
-x = Translator._display_action("eat", 1)
+# x = Translator._display_action("eat", 1)

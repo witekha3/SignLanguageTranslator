@@ -1,6 +1,8 @@
 import glob
 import logging
 import os
+from os import listdir
+from os.path import isdir
 from pathlib import Path
 from typing import Tuple, Optional, List, NamedTuple, Dict, Union
 
@@ -186,7 +188,7 @@ class BodyDetector:
 
     @staticmethod
     def get_all_actions_names():
-        return [os.path.basename(x[0]) for x in os.walk(ACTIONS_DIR)]
+        return sorted([f for f in listdir(ACTIONS_DIR) if isdir(os.path.join(ACTIONS_DIR, f))])
 
     @staticmethod
     def get_points(action_name, repeat_num):

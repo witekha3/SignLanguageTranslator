@@ -21,7 +21,7 @@ class SignTrainer:
     def __init__(self):
         # for index, row in self.data.iterrows():
         #     for
-        self.label_map = {label: num for num, label in enumerate(set(BodyDetector.get_all_actions_names()))}
+        self.label_map = {label: num for num, label in enumerate(list(BodyDetector.get_all_actions_names()))}
         # self.max_sequence_len = self.data[list(POINTS_NUM.keys())[0]].map(len).max()
         self.max_sequence_len = 50
         self.min_sequence_len = 50
@@ -36,10 +36,11 @@ class SignTrainer:
 
     def _prepare_model(self):
         model = Sequential()
-        model.add(Masking(mask_value=self.ignor_val, input_shape=(self.max_sequence_len, sum(POINTS_NUM.values()))))
-        model.add(LSTM(250, return_sequences=True, activation='tanh'))
-        model.add(LSTM(120, return_sequences=False, activation='tanh'))
-        model.add(Dense(32, activation='relu')),
+        model.add(LSTM(50, return_sequences=True, activation='tanh', input_shape=(self.max_sequence_len, sum(POINTS_NUM.values())))),
+        model.add(LSTM(80, return_sequences=True, activation='tanh'))
+        model.add(LSTM(150, return_sequences=False, activation='tanh'))
+        model.add(Dense(100, activation='relu')),
+        model.add(Dense(50, activation='relu')),
         model.add(Dense(len(self.label_map), activation='softmax'))
         model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
         return model
@@ -94,5 +95,5 @@ class SignTrainer:
         return model
 
 #
-a = SignTrainer()
-a.train_data(True)
+# a = SignTrainer()
+# a.train_data(True)
