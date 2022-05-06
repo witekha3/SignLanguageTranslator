@@ -36,14 +36,13 @@ class SignTrainer:
 
     def _prepare_model(self):
         model = Sequential()
-        model.add(LSTM(50, return_sequences=True, activation='tanh', input_shape=(self.max_sequence_len, sum(POINTS_NUM.values())))),
-        model.add(LSTM(80, return_sequences=True, activation='tanh'))
-        model.add(LSTM(150, return_sequences=False, activation='tanh'))
-        model.add(Dense(100, activation='relu')),
-        model.add(Dense(50, activation='relu')),
+        model.add(LSTM(250, return_sequences=True, activation='tanh', input_shape=(self.max_sequence_len, sum(POINTS_NUM.values())))),
+        model.add(LSTM(120, return_sequences=False, activation='tanh'))
+        model.add(Dense(32, activation='relu')),
         model.add(Dense(len(self.label_map), activation='softmax'))
         model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
         return model
+
 
     def pad_sequence(self, sequence):
         return np.pad(sequence, [(0, self.max_sequence_len - len(sequence)), (0, 0)], 'constant',
