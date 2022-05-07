@@ -13,7 +13,7 @@ import pandas as pd
 from cv2 import VideoCapture
 from mediapipe.framework.formats.landmark_pb2 import NormalizedLandmarkList
 from mediapipe.python.solutions.holistic import Holistic
-from numpy import ndarray
+from mediapipe.python.solutions import holistic as holistic_model
 from pandas import Series
 
 import config
@@ -44,7 +44,6 @@ class BodyDetector:
     def __init__(self, video_capture: VideoCapture = None):
         self._drawing = mp.solutions.drawing_utils  # Drawing helpers
         self._video_capture = video_capture if video_capture else cv2.VideoCapture(0)
-        self._holistic_model = mp.solutions.holistic
         self._current_image = None
         self._black_image = None
 
@@ -72,7 +71,7 @@ class BodyDetector:
         """
         Runs landmark detection
         :param model: MediaPipe holistic model
-        :return: A frame and a namedTuple with fields describing the landmarks on the most prominate person detected:
+        :return: Mediapipe SolutionOutputs
         """
         _, frame = self._video_capture.read()
         if frame is None:
@@ -90,10 +89,10 @@ class BodyDetector:
         :param detection_results: Results from the detection
         :return: None
         """
-        self._draw_landmarks(detection_results.face_landmarks, self._holistic_model.FACEMESH_TESSELATION)
-        self._draw_landmarks(detection_results.right_hand_landmarks, self._holistic_model.HAND_CONNECTIONS)
-        self._draw_landmarks(detection_results.left_hand_landmarks, self._holistic_model.HAND_CONNECTIONS)
-        self._draw_landmarks(detection_results.pose_landmarks, self._holistic_model.POSE_CONNECTIONS)
+        self._draw_landmarks(detection_results.face_landmarks, holistic_model.FACEMESH_TESSELATION)
+        self._draw_landmarks(detection_results.right_hand_landmarks, holistic_model.HAND_CONNECTIONS)
+        self._draw_landmarks(detection_results.left_hand_landmarks, holistic_model.HAND_CONNECTIONS)
+        self._draw_landmarks(detection_results.pose_landmarks, holistic_model.POSE_CONNECTIONS)
 
     @staticmethod
     def get_body_points(detection_results: NamedTuple) -> Dict[str, List[list]]:
@@ -115,7 +114,13 @@ class BodyDetector:
             body_points[key] = points
         return body_points
 
-    def detect_points(self, frames_start: int, frames_end: int, draw_landmarks: bool = True, show_cam: bool = True) -> pd.DataFrame:
+    def detect_points(
+            self,
+            frames_start: int,
+            frames_end: int,
+            draw_landmarks: bool = True,
+            show_cam: bool = True
+    ) -> pd.DataFrame:
         """
         Determines the landmarks for each frame in the interval
         :param frames_start: Initial frame number
@@ -125,7 +130,7 @@ class BodyDetector:
         :return: Landmark vector for each frame
         """
         body_points = pd.DataFrame()
-        with self._holistic_model.Holistic(min_detection_confidence=config.MIN_DETECTION_CONFIDENCE,
+        with holistic_model.Holistic(min_detection_confidence=config.MIN_DETECTION_CONFIDENCE,
                                            min_tracking_confidence=config.MIN_TRACKING_CONFIDENCE) as holistic:
             for i in range(frames_start, frames_end):
                 self._video_capture.set(1, i)
@@ -154,13 +159,18 @@ class BodyDetector:
             frames.append(np.array(flattened_points))
         return np.array(frames)
 
-
     @staticmethod
-    def _prepare_dir(action_name):
+    def _prepare_dir(action_name: str) -> None:
+        """Creates dir for action points"""
         Path(os.path.join(ACTIONS_DIR, action_name)).mkdir(exist_ok=True)
 
     @staticmethod
-    def find_last_action_repeat(action):
+    def find_last_action_repeat(action: str) -> int:
+        """
+        Finds the last repeat of saved points for the action
+        :param action: action name
+        :return: Last repeat num
+        """
         action_files = glob.glob(f'{ACTIONS_DIR}/{action}/{action}__*')
         if not action_files:
             return -1
@@ -168,9 +178,9 @@ class BodyDetector:
         return last_repeat
 
     @staticmethod
-    def save_points(data: pd.DataFrame, action: str):
+    def save_points(data: pd.DataFrame, action: str) -> None:
         """
-        Saves landmark sequences from frames to a collective pandas dataframe
+        Saves a sequence of landmarks from the action
         :param data: Data to save
         :param action: Name for the frame sequence
         :return: None
@@ -180,19 +190,23 @@ class BodyDetector:
             data = data.groupby("ACTION").agg(list)
             BodyDetector._prepare_dir(action)
             last_action_repeat = BodyDetector.find_last_action_repeat(action)
-            output_file = os.path.join(ACTIONS_DIR, action, f"{action}__{last_action_repeat+1}")
+            output_file = os.path.join(ACTIONS_DIR, action, f"{action}__{last_action_repeat + 1}")
             data.to_pickle(output_file)
             logging.info(f"Points for action {action} saved to {output_file}!")
         else:
             logging.warning("Data can't be None")
 
     @staticmethod
-    def get_all_actions_names():
+    def get_all_actions_names() -> List[str]:
+        """Returns a list of all saved actions"""
         return sorted([f for f in listdir(ACTIONS_DIR) if isdir(os.path.join(ACTIONS_DIR, f))])
 
     @staticmethod
     def get_points(action_name, repeat_num):
         """
+        Gets saved points for given action and repeat
+        :param action_name: action name
+        :param repeat_num: action repeat number
         :return: Saved action
         """
         return pd.read_pickle(os.path.join(ACTIONS_DIR, action_name, f"{action_name}__{repeat_num}"))

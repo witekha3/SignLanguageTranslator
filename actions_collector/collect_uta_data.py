@@ -1,8 +1,6 @@
-import copy
 import os
 from os import listdir
 
-import numpy as np
 import pandas as pd
 import urllib.request
 from urllib import error as url_error
@@ -92,20 +90,6 @@ def collect_actions(save_to_temp=True) -> None:
                         logging.error(f"{err}. Url: {mov_url}")
                         continue
                     _save_action(action, filename, gloss_start, gloss_end)
-
-
-def create_smaller_dataset():
-    data = BodyDetector.get_points().sort_values("ACTION")[3:103]
-    data.to_pickle(os.path.join(ROOT_DIR, "actions_small.pkl"))
-
-
-def load_smaller_dataset():
-    file = os.path.join(ROOT_DIR, "actions_small.pkl")
-    if os.path.isfile(file):
-        return pd.read_pickle(file)
-    else:
-        return None
-
 
 # collect_actions(False)
 # create_smaller_dataset()
