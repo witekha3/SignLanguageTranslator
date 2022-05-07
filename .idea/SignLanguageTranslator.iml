@@ -3,6 +3,10 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/venv" />
+      <excludeFolder url="file://$MODULE_DIR$/actions_collector/own_const_len_videos" />
+      <excludeFolder url="file://$MODULE_DIR$/actions_collector/own_videos" />
+      <excludeFolder url="file://$MODULE_DIR$/actions_collector/videos" />
+      <excludeFolder url="file://$MODULE_DIR$/actions_const_len" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.8 (SignLanguageTranslator)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

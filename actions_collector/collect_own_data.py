@@ -96,6 +96,6 @@ def collect_actions(videos_dir=None, draw_landmarks=False, show_webcam=True):
 
 
 # record_video(50, r"E:\Own\SignLanguageTranslator\actions_collector\own_const_len_videos", 50)
-# collect_actions(r"E:\Own\SignLanguageTranslator\actions_collector\own_const_len_videos", True, show_webcam=True)
+# collect_actions(r"E:\Own\SignLanguageTranslator\actions_collector\own_videos", True, show_webcam=True)
 #
 #
