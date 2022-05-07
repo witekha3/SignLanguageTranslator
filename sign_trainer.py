@@ -18,7 +18,7 @@ from body_detector import POINTS_NUM
 
 class SignTrainer:
     """
-    class resposnisble for gesture recognition network
+    class responsible for gesture recognition network
     """
 
     def __init__(self):
@@ -31,12 +31,12 @@ class SignTrainer:
 
     @staticmethod
     def _prepare_dir_for_logs() -> None:
-        """Prepare dir for tensorflow files like model or tensorboard"""
+        """Prepare dir for tensorflow files like _model or tensorboard"""
         shutil.rmtree(config.TENSOR_DIR, ignore_errors=True)
         os.makedirs(config.TENSOR_DIR)
 
     def _prepare_model(self) -> Sequential:
-        """Creates model"""
+        """Creates _model"""
         model = Sequential()
         model.add(Masking(mask_value=self._ignore_value, input_shape=(self.max_sequence_len, sum(POINTS_NUM.values()))))
         model.add(LSTM(250, return_sequences=True, activation='tanh')),
@@ -88,7 +88,7 @@ class SignTrainer:
 
     def train_model(self) -> Sequential:
         """
-        Trains model
+        Trains _model
         :return: Model after training
         """
         self._prepare_dir_for_logs()
@@ -105,7 +105,7 @@ class SignTrainer:
         return model
 
     def load_model(self) -> Sequential:
-        """Loads saved model"""
+        """Loads saved _model"""
         model = self._prepare_model()
         model.load_weights(self._model_path)
         with open(self._model_params) as json_file:
@@ -114,6 +114,3 @@ class SignTrainer:
             self.min_sequence_len = data["min_seq_len"]
         return model
 
-
-# a = SignTrainer()
-# a.train_model()

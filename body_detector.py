@@ -14,6 +14,7 @@ from cv2 import VideoCapture
 from mediapipe.framework.formats.landmark_pb2 import NormalizedLandmarkList
 from mediapipe.python.solutions.holistic import Holistic
 from mediapipe.python.solutions import holistic as holistic_model
+from mediapipe.python.solutions import drawing_utils as drawing
 from pandas import Series
 
 import config
@@ -42,13 +43,13 @@ class BodyDetector:
     """
 
     def __init__(self, video_capture: VideoCapture = None):
-        self._drawing = mp.solutions.drawing_utils  # Drawing helpers
         self._video_capture = video_capture if video_capture else cv2.VideoCapture(0)
         self._current_image = None
         self._black_image = None
 
-    def _draw_landmarks(
-            self,
+    @staticmethod
+    def draw_landmarks(
+            image: Optional[np.ndarray],
             landmark: NormalizedLandmarkList,
             connections: Optional[List[Tuple[int, int]]],
             color: Optional[Tuple] = (80, 110, 10),
@@ -57,20 +58,20 @@ class BodyDetector:
     ) -> None:
         """
         Draws landmarks on a image
+        :param image: The image on which the landmarks are to be drawn
         :param landmark: A normalized landmark list proto message to be annotated on the image
         :param connections: A list of landmark index tuples that specifies how landmarks to be connected in the drawing
-        :param color: Landmarks color (Default =  (80, 110, 10))
-        :param thickness: Landmarks thickness (Default = 1)
-        :param circle_radius: Landmarks radius (Default = 1)
+        :param color: Optional - Landmarks color (Default =  (80, 110, 10))
+        :param thickness: Optional - Landmarks thickness (Default = 1)
+        :param circle_radius: Optional - Landmarks radius (Default = 1)
         :return: None
         """
-        self._drawing.draw_landmarks(self._current_image, landmark, connections,
-                                     self._drawing.DrawingSpec(color, thickness, circle_radius))
+        drawing.draw_landmarks(image, landmark, connections, drawing.DrawingSpec(color, thickness, circle_radius))
 
     def _run_detection(self, model: Holistic) -> Union[NamedTuple, None]:
         """
         Runs landmark detection
-        :param model: MediaPipe holistic model
+        :param model: MediaPipe holistic _model
         :return: Mediapipe SolutionOutputs
         """
         _, frame = self._video_capture.read()
@@ -83,16 +84,18 @@ class BodyDetector:
         self._current_image = cv2.cvtColor(self._current_image, cv2.COLOR_RGB2BGR)
         return detection_results
 
-    def _draw_all_body_points(self, detection_results: NamedTuple) -> None:
+    @staticmethod
+    def draw_all_body_points(detection_results: NamedTuple, image: np.ndarray = None) -> None:
         """
         Draws all landmarks from the detection result
         :param detection_results: Results from the detection
+        :param image: The image on which the landmarks are to be drawn
         :return: None
         """
-        self._draw_landmarks(detection_results.face_landmarks, holistic_model.FACEMESH_TESSELATION)
-        self._draw_landmarks(detection_results.right_hand_landmarks, holistic_model.HAND_CONNECTIONS)
-        self._draw_landmarks(detection_results.left_hand_landmarks, holistic_model.HAND_CONNECTIONS)
-        self._draw_landmarks(detection_results.pose_landmarks, holistic_model.POSE_CONNECTIONS)
+        BodyDetector.draw_landmarks(image, detection_results.face_landmarks, holistic_model.FACEMESH_TESSELATION)
+        BodyDetector.draw_landmarks(image, detection_results.right_hand_landmarks, holistic_model.HAND_CONNECTIONS)
+        BodyDetector.draw_landmarks(image, detection_results.left_hand_landmarks, holistic_model.HAND_CONNECTIONS)
+        BodyDetector.draw_landmarks(image, detection_results.pose_landmarks, holistic_model.POSE_CONNECTIONS)
 
     @staticmethod
     def get_body_points(detection_results: NamedTuple) -> Dict[str, List[list]]:
@@ -131,13 +134,13 @@ class BodyDetector:
         """
         body_points = pd.DataFrame()
         with holistic_model.Holistic(min_detection_confidence=config.MIN_DETECTION_CONFIDENCE,
-                                           min_tracking_confidence=config.MIN_TRACKING_CONFIDENCE) as holistic:
+                                     min_tracking_confidence=config.MIN_TRACKING_CONFIDENCE) as holistic:
             for i in range(frames_start, frames_end):
                 self._video_capture.set(1, i)
                 detection_results = self._run_detection(holistic)
                 if show_cam:
                     if draw_landmarks:
-                        self._draw_all_body_points(detection_results)
+                        BodyDetector.draw_all_body_points(detection_results, self._current_image, )
                     cv2.imshow('Raw Webcam Feed', self._current_image)
                     if cv2.waitKey(10) & 0xFF == ord('q'):
                         break

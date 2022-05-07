@@ -1,11 +1,11 @@
 import logging
 import time
-from typing import List, Dict, Any
+from typing import List, NamedTuple, Optional
 
 import cv2
+import pandas as pd
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe.framework.formats.landmark_pb2 import NormalizedLandmark
-import mediapipe as mp
 
 import config
 from body_detector import POINTS_NUM, BodyDetector
@@ -13,72 +13,82 @@ from sign_trainer import SignTrainer
 import numpy as np
 
 
+class DetectionResults(NamedTuple):
+    """Represents 'SolutionOutputs' from Mediapipe"""
+    face_landmarks: NormalizedLandmark
+    left_hand_landmarks: NormalizedLandmark
+    right_hand_landmarks: NormalizedLandmark
+    pose_landmarks: NormalizedLandmark
+
+
 class Translator:
+    """
+    Class responsible for making translations
+    """
 
     def __init__(self):
         self.trainer = SignTrainer()
-        self.model = self.trainer.load_model()
-        self.translations = list(self.trainer.label_map)
-        logging.debug(f"Available actions: {self.trainer.label_map.keys()}")
+        self._model = self.trainer.load_model()
+        self.translations = BodyDetector.get_all_actions_names()
+        logging.debug(f"Available actions: {self.translations}")
 
-    def translate_to_eng(self, sequence):
+    def asl_to_eng(self, sequence: pd.DataFrame) -> str:
+        """
+        Translates ASL into english
+        :param sequence: sequence to translate
+        :return: Translation of the sequence
+        """
         sequence["ACTION"] = "ACTION"
         sequence = sequence.groupby("ACTION").agg(list)
         sequence = BodyDetector.flatten_action(sequence.iloc[0])
         sequence = self.trainer.pad_sequence(sequence)
-        predictions = self.model.predict(np.expand_dims(sequence, axis=0))[0]
+        predictions = self._model.predict(np.expand_dims(sequence, axis=0))[0]
 
         if predictions[np.argmax(predictions)] >= config.THRESHOLD:
             return self.translations[np.argmax(predictions)]
         else:
             logging.debug(f"Max threshold: {self.translations[np.argmax(predictions)]} - {predictions[np.argmax(predictions)]}")
-            return None
+            return ""
 
     @staticmethod
-    def _action_to_landmarks(action_name: str, repeat_nbr: int = 0) -> List[Dict[str, Any]]:
+    def _action_to_landmarks(action_name: str, repeat_nbr: int = 0) -> List[NamedTuple]:
+        """
+        Retrieves data from a saved action and returns it as mediapipe landmarks
+        :param action_name: action to read
+        :param repeat_nbr: action repeat number
+        :return: List of Landmarks per frame
+        """
         action_per_frames = BodyDetector.get_points(action_name, repeat_nbr).apply(lambda x: x[0])
-        landmarks_in_frame = []
+        landmarks_in_repeat = []
         for i, data in action_per_frames.iterrows():
             landmarks_dict = {}
             for key in POINTS_NUM.keys():
                 landmark_list = []
                 for point in data[key]:
-                    # TODO: make it prettier
                     nl = NormalizedLandmark()
-                    nl.x = point[0]
-                    nl.y = point[1]
-                    nl.z = point[2]
+                    nl.x, nl.y, nl.z, nl.visibility = point
                     nl.visibility = 1
                     landmark_list.append(nl)
-                landmarks_dict[key] = landmark_pb2.NormalizedLandmarkList(landmark=landmark_list)
-            landmarks_in_frame.append(landmarks_dict)
-        return landmarks_in_frame
+                landmarks_dict[f"{key.lower()}_landmarks"] = landmark_pb2.NormalizedLandmarkList(landmark=landmark_list)
+            landmarks_in_repeat.append(DetectionResults(**landmarks_dict))
+        return landmarks_in_repeat
 
     @staticmethod
-    def _display(img, landmark, connections):
-        # TODO: REFACTOR! THIS CODE EXISTS IN BODY_DETECTOR
-        try:
-            mp.solutions.drawing_utils.draw_landmarks(img, landmark, connections)
-        except ValueError:
-            return
-
-    @staticmethod
-    def _display_action(action_name: str, repeat_nbr: int = 0):
+    def english_to_asl(action_name: str, repeat_nbr: Optional[int] = 0) -> None:
+        """
+        Converts english word into ASL
+        :param action_name: word in english
+        :param repeat_nbr: Optional -Video repeat number. Default = 0
+        :return: None
+        """
         action_landmarks = Translator._action_to_landmarks(action_name, repeat_nbr=repeat_nbr)
         while True:
-            for landmarks in action_landmarks:
+            for results in action_landmarks:
                 img = np.zeros([500, 500, 3], dtype=np.uint8)
                 img.fill(255)
-                # TODO: REFACTOR! THIS CODE EXISTS IN BODY_DETECTOR
-                Translator._display(img, landmarks["FACE"], mp.solutions.holistic.FACEMESH_TESSELATION)
-                Translator._display(img, landmarks["RIGHT_HAND"], mp.solutions.holistic.HAND_CONNECTIONS)
-                Translator._display(img, landmarks["LEFT_HAND"], mp.solutions.holistic.HAND_CONNECTIONS)
-                Translator._display(img, landmarks["POSE"], mp.solutions.holistic.POSE_CONNECTIONS)
-
+                BodyDetector.draw_all_body_points(results, img)
                 cv2.imshow("action", img)
                 if cv2.waitKey(10) & 0xFF == ord('q'):
                     return
             time.sleep(1)
 
-
-# x = Translator._display_action("eat", 1)
