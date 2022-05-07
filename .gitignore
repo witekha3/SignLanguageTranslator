@@ -105,10 +105,11 @@ celerybeat.pid
 .env
 .venv
 env/
-venv/
+../venv/
 ENV/
 env.bak/
 venv.bak/
+venv/
 
 # Spyder project settings
 .spyderproject
@@ -127,3 +128,31 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# PyCharm
+../Do magisterki/SignLanguageTranslator/.idea/
+
+# Private
+old_one/ForMyself/
+
+# Model
+#*.h5
+
+# Test data
+BDDir/
+
+# File with all collected data
+*.pkl
+
+# All videos files
+videos/
+
+#Own videos files
+own_videos/
+own_const_len_videos/
+
+#Actions
+actions/
+
+# Rar files
+*.rar
