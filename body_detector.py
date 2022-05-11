@@ -6,7 +6,6 @@ from os.path import isdir
 from pathlib import Path
 from typing import Tuple, Optional, List, NamedTuple, Dict, Union
 
-import mediapipe as mp
 import cv2
 import numpy as np
 import pandas as pd
@@ -45,13 +44,12 @@ class BodyDetector:
     def __init__(self, video_capture: VideoCapture = None):
         self._video_capture = video_capture if video_capture else cv2.VideoCapture(0)
         self._current_image = None
-        self._black_image = None
 
     @staticmethod
     def draw_landmarks(
-            image: Optional[np.ndarray],
+            image: np.ndarray,
             landmark: NormalizedLandmarkList,
-            connections: Optional[List[Tuple[int, int]]],
+            connections: List[Tuple[int, int]],
             color: Optional[Tuple] = (80, 110, 10),
             thickness: Optional[int] = 1,
             circle_radius: Optional[int] = 1
@@ -205,7 +203,7 @@ class BodyDetector:
         return sorted([f for f in listdir(ACTIONS_DIR) if isdir(os.path.join(ACTIONS_DIR, f))])
 
     @staticmethod
-    def get_points(action_name, repeat_num):
+    def get_points(action_name: str, repeat_num: int) -> pd.DataFrame:
         """
         Gets saved points for given action and repeat
         :param action_name: action name

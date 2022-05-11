@@ -30,7 +30,7 @@ class SignTrainer:
         self._model_params = os.path.join(config.TENSOR_DIR, "model_params.json")
 
     @staticmethod
-    def _prepare_dir_for_logs() -> None:
+    def _prepare_dir_for_tensor() -> None:
         """Prepare dir for tensorflow files like _model or tensorboard"""
         shutil.rmtree(config.TENSOR_DIR, ignore_errors=True)
         os.makedirs(config.TENSOR_DIR)
@@ -38,12 +38,15 @@ class SignTrainer:
     def _prepare_model(self) -> Sequential:
         """Creates _model"""
         model = Sequential()
-        model.add(Masking(mask_value=self._ignore_value, input_shape=(self.max_sequence_len, sum(POINTS_NUM.values()))))
-        model.add(LSTM(250, return_sequences=True, activation='tanh')),
-        model.add(LSTM(120, return_sequences=False, activation='tanh'))
-        model.add(Dense(32, activation='relu')),
+        model.add(Masking(mask_value=self._ignore_value,
+                          input_shape=(self.max_sequence_len, sum(POINTS_NUM.values()))))
+        model.add(LSTM(50, return_sequences=True, activation='tanh')),
+        model.add(LSTM(60, return_sequences=False, activation='tanh'))
+        model.add(Dense(50, activation='relu')),
+        model.add(Dense(30, activation='relu')),
         model.add(Dense(len(self.label_map), activation='softmax'))
-        model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+        model.compile(optimizer='Adam', loss='categorical_crossentropy',
+                      metrics=['categorical_accuracy'])
         return model
 
     def pad_sequence(self, sequence: np.ndarray) -> np.ndarray:
@@ -59,7 +62,7 @@ class SignTrainer:
         return np.pad(sequence, [(0, self.max_sequence_len - len(sequence)), (0, 0)], 'constant',
                       constant_values=self._ignore_value)
 
-    def find_min_max_sequence_len(self, sequences_len: list) -> None:
+    def find_min_max_sequence_len(self, sequences_len: List[int]) -> None:
         """
         Sets min and max sequence len
         :param sequences_len: list of sequences lengths
@@ -91,13 +94,14 @@ class SignTrainer:
         Trains _model
         :return: Model after training
         """
-        self._prepare_dir_for_logs()
+        self._prepare_dir_for_tensor()
         x_train, x_test, y_train, y_test = self.test_train_generator()
         model = self._prepare_model()
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(self._model_path, verbose=1,)
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(self._model_path, verbose=1, )
         tensor_board = TensorBoard(log_dir=config.TENSOR_DIR)
-        es = EarlyStopping(monitor="val_loss", verbose=1, patience=50)
-        model.fit(x_train, y_train, epochs=config.EPOCHS, callbacks=[tensor_board, es, cp_callback], validation_data=(x_test, y_test))
+        es = EarlyStopping(monitor="val_loss", verbose=1, patience=200)
+        model.fit(x_train, y_train, epochs=config.EPOCHS, callbacks=[tensor_board, es, cp_callback],
+                  validation_data=(x_test, y_test))
         model.summary()
         model.save(self._model_path)
         with open(self._model_params, 'w') as f:
@@ -113,4 +117,3 @@ class SignTrainer:
             self.max_sequence_len = data["max_seq_len"]
             self.min_sequence_len = data["min_seq_len"]
         return model
-

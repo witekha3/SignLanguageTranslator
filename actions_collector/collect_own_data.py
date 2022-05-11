@@ -107,7 +107,8 @@ def record_new_action(
 def collect_actions_points(
         videos_dir: Optional[str] = None,
         draw_landmarks: Optional[bool] = False,
-        show_webcam: Optional[bool] = True
+        show_webcam: Optional[bool] = True,
+        action: Optional[str] = None
 ) -> None:
     """
     It analyzes each video in a given directory and then records a landmark from the actor's body from each recording.
@@ -118,11 +119,16 @@ def collect_actions_points(
     Default = False
     :param show_webcam: Optional - Flag indicating whether to display the recording from which landmarks are currently
     being taken. Defult = True
+    :param action: Optional - Records points only from the selected action
     :return: None
     """
+
     if not videos_dir:
         videos_dir = os.path.join(ROOT_DIR, "own_videos")
     for filename in listdir(videos_dir):
+        if action:
+            if not filename.startswith(f"{action}__"):
+                continue
         video_cap = cv2.VideoCapture(os.path.join(videos_dir, filename))
         action = filename.split("__")[0]
         detector = BodyDetector(video_cap)
@@ -134,7 +140,7 @@ def collect_actions_points(
             logging.error(f"CV2 error! Action: {action}, file: {filename}")
             return
 
-# record_new_action(50, r"E:\Own\SignLanguageTranslator\actions_collector\own_const_len_videos", 50)
-# collect_actions_points(r"E:\Own\SignLanguageTranslator\actions_collector\own_videos", True, show_webcam=True)
+# record_new_action(50, r"E:\Own\SignLanguageTranslator\actions_collector\own_videos")
+# collect_actions_points(r"E:\Own\SignLanguageTranslator\actions_collector\own_videos", True, show_webcam=True, action=".")
 #
 #

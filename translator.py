@@ -43,12 +43,13 @@ class Translator:
         sequence = BodyDetector.flatten_action(sequence.iloc[0])
         sequence = self.trainer.pad_sequence(sequence)
         predictions = self._model.predict(np.expand_dims(sequence, axis=0))[0]
+        translation = self.translations[np.argmax(predictions)]
 
         if predictions[np.argmax(predictions)] >= config.THRESHOLD:
-            return self.translations[np.argmax(predictions)]
-        else:
-            logging.debug(f"Max threshold: {self.translations[np.argmax(predictions)]} - {predictions[np.argmax(predictions)]}")
-            return ""
+            return translation
+        # else:
+            # logging.debug(f"Max threshold: {self.translations[np.argmax(predictions)]} - {predictions[np.argmax(predictions)]}")
+        return ""
 
     @staticmethod
     def _action_to_landmarks(action_name: str, repeat_nbr: int = 0) -> List[NamedTuple]:
